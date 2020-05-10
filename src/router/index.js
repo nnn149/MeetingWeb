@@ -93,12 +93,18 @@ export const constantRoutes = [
   }
 ]
 
+/* Router Modules */
+import dictionaryRouter from './modules/dictionary'
+import userRouter from './modules/user'
+
 /**
  * asyncRoutes
  * the routes that need to be dynamically loaded based on user roles
  */
 export const asyncRoutes = [
-
+  /** when your routing map is too long, you can split it into small modules **/
+  userRouter,
+  dictionaryRouter,
   {
     path: 'external-link',
     component: Layout,
