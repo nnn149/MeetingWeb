@@ -60,7 +60,6 @@
 </template>
 
 <script>
-import { validUsername } from '@/utils/validate'
 import Register from './components/Register'
 
 export default {
@@ -68,16 +67,23 @@ export default {
   components: { Register },
   data() {
     const validateUsername = (rule, value, callback) => {
-      if (!validUsername(value)) {
-        callback(new Error('请输入正确的用户名'))
-      } else {
-        callback()
+      if (!value) {
+        return callback(new Error('请输入用户名'))
       }
+      var reg = /^[a-zA-Z]\w{4,15}$/
+      if (!reg.test(value)) {
+        return callback(new Error('字母开头，5-16字节，字母数字下划线组合'))
+      }
+      callback()
     }
     const validatePassword = (rule, value, callback) => {
-      if (value.length < 6) {
-        callback(new Error('密码不能少于6位'))
+      if (value === '') {
+        callback(new Error('请输入密码'))
       } else {
+        var reg = /^[\u0021-\u007E]{6,16}$/
+        if (!reg.test(value)) {
+          return callback(new Error('长度6-16'))
+        }
         callback()
       }
     }

@@ -51,14 +51,14 @@ const actions = {
         const { data } = response
 
         if (!data) {
-          reject('Verification failed, please Login again.')
+          reject('验证失败，请重新登录')
         }
 
         const { roles, name, avatar, introduction } = data
 
         // roles must be a non-empty array
         if (!roles || roles.length <= 0) {
-          reject('getInfo: roles must be a non-null array!')
+          reject('getInfo：角色必须为非null数组！')
         }
 
         commit('SET_ROLES', roles)

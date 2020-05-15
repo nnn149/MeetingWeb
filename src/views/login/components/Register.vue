@@ -27,7 +27,7 @@
 
 <script>
 // import openWindow from '@/utils/open-window'
-
+import { register } from '@/api/user'
 export default {
   name: 'Register',
   data() {
@@ -115,7 +115,14 @@ export default {
     submitForm(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          alert('submit!')
+          register(this.ruleForm).then(() => {
+            this.$notify({
+              title: '成功',
+              message: '注册成功，现在可以登录',
+              type: 'success',
+              duration: 2000
+            })
+          })
         } else {
           console.log('error submit!!')
           return false
