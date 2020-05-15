@@ -90,6 +90,19 @@ export const constantRoutes = [
         meta: { title: 'Profile', icon: 'user', noCache: true }
       }
     ]
+  },
+  {
+    path: '/meeting',
+    component: Layout,
+    redirect: '/meeting/index',
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/meeting/index'),
+        name: 'Meeting',
+        meta: { title: '会议', icon: 'user', noCache: true }
+      }
+    ]
   }
 ]
 
