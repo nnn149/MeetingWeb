@@ -3,15 +3,7 @@
 
     <el-container>
       <el-header height="214px">
-        <preview />
-        <preview />
-        <preview />
-        <preview />
-        <preview />
-        <preview />
-        <preview />
-        <preview />
-        <preview />
+        <preview v-for="client in clients" :key="client.userId" :client="client" @pmEvent="pm" @microEvent="changeMicro" @fullEvent="fullScreen" @kickEvent="kick" @viewEvent="changeView" />
       </el-header>
       <el-container>
 
@@ -41,9 +33,13 @@ export default {
   components: { Preview },
   data() {
     return {
-      locallocalWebsocket: null,
-      wsurl: null,
-      localStream: undefined
+      localWebsocket: undefined,
+      wsurl: undefined,
+      clients: [{
+        userId: '0',
+        roomId: '0',
+        localStream: undefined
+      }]
     }
   },
   beforeDestroy() {
@@ -56,19 +52,30 @@ export default {
     // 设置本地播放器
     startV() {
       this.initLocalWebsocket()
-      var localStream
       console.log(adapter.browserDetails.browser)
       navigator.mediaDevices.getUserMedia({ video: true })
         .then((mediaStream) => {
           console.log('本地播放器设置')
-          localStream = mediaStream
-          this.localStream = localStream
-          this.$refs.video_self.srcObject = this.localStream
+          const c0 = {
+            userId: '00',
+            roomId: '0',
+            localStream: mediaStream
+          }
+          this.$set(this.clients, 0, c0)
+
+          const c1 = {
+            userId: '1',
+            roomId: '1',
+            localStream: mediaStream
+          }
+          this.$set(this.clients, 1, c1)
+
+          console.log(this.clients)
           console.log('本地播放器设置成功')
           var rtcPeerConnection = new RTCPeerConnection(null)
           console.log(rtcPeerConnection)
-        }).catch(() => {
-          console.log('失败')
+        }).catch((e) => {
+          console.log('失败 ' + e.message)
         })
     },
     stopV() {
@@ -79,6 +86,21 @@ export default {
     },
     addV() {
 
+    },
+    pm(userId) {
+      console.log('pm:' + userId)
+    },
+    changeMicro(userId) {
+      console.log('changeMicro:' + userId)
+    },
+    fullScreen(userId) {
+      console.log('fullScreen:' + userId)
+    },
+    kick(userId) {
+      console.log('kick:' + userId)
+    },
+    changeView(userId) {
+      console.log('changeView:' + userId)
     },
     async  initLocalWebsocket() { // 初始化weosocket
       const response = await getUrl()
