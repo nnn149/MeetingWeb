@@ -33,28 +33,40 @@
 
 <script>
 import Preview from './components/Preview'
+import adapter from 'webrtc-adapter'
+import { getUrl } from '@/api/websocketInfo'
 
 export default {
   name: 'Meeting',
   components: { Preview },
   data() {
     return {
-
+      locallocalWebsocket: null,
+      wsurl: null,
       localStream: undefined
     }
   },
   beforeDestroy() {
     console.log('即将销毁')
   },
+  destroyed() {
+    this.localWebsocket.close() // 离开路由之后断开localWebsocket连接
+  },
   methods: {
     // 设置本地播放器
     startV() {
+      this.initLocalWebsocket()
+      var localStream
+      console.log(adapter.browserDetails.browser)
       navigator.mediaDevices.getUserMedia({ video: true })
         .then((mediaStream) => {
           console.log('本地播放器设置')
-          this.localStream = mediaStream
+          localStream = mediaStream
+          this.localStream = localStream
           this.$refs.video_self.srcObject = this.localStream
           console.log('本地播放器设置成功')
+          var rtcPeerConnection = new RTCPeerConnection(null)
+          console.log(rtcPeerConnection)
         }).catch(() => {
           console.log('失败')
         })
@@ -63,9 +75,34 @@ export default {
       this.localStream.getTracks().forEach(function(track) {
         track.stop()
       })
+      this.localWebsocket.close()
     },
     addV() {
 
+    },
+    async  initLocalWebsocket() { // 初始化weosocket
+      const response = await getUrl()
+      this.wsurl = response.data
+      console.log('获取到wsurl:' + this.wsurl)
+      this.localWebsocket = new WebSocket(this.wsurl)
+      this.localWebsocket.onmessage = this.wseReceiveMessage
+      this.localWebsocket.onopen = () => {
+        console.log('localWebsocket打开')
+      }
+      this.localWebsocket.onerror = () => {
+        console.log('localWebsocket错误')
+        // 重连？
+      }
+      this.localWebsocket.onclose = (e) => {
+        console.log('localWebsocket关闭' + e)
+      }
+    },
+    wseReceiveMessage(e) { // 数据接收
+      const redata = JSON.parse(e.data)
+      console.log(redata)
+    },
+    wsSend(Data) { // 数据发送
+      this.localWebsocket.send(Data)
     }
   }
 

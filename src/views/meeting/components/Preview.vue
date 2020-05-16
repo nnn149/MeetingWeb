@@ -5,7 +5,6 @@
         <video style="height: 100%;width: 100%" />
       </div>
     </div>
-
     <div class="console-container">
       <span style="max-width: 130px">
         <i class="el-icon-s-custom" />
