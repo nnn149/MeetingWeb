@@ -17,7 +17,7 @@
           </el-button>
 
         </el-main>
-        <el-aside width="300px">Aside</el-aside>
+        <el-aside width="350px"><Chat :receive-msg="receiveMsg" @chatEvent="sendChat" @noticeEvent="notice" /></el-aside>
       </el-container>
     </el-container>
   </div>
@@ -25,16 +25,18 @@
 
 <script>
 import Preview from './components/Preview'
+import Chat from './components/Chat'
 import adapter from 'webrtc-adapter'
 import { getUrl } from '@/api/websocketInfo'
 
 export default {
   name: 'Meeting',
-  components: { Preview },
+  components: { Preview, Chat },
   data() {
     return {
       localWebsocket: undefined,
       wsurl: undefined,
+      receiveMsg: '',
       clients: [{
         userId: '0',
         roomId: '0',
@@ -85,7 +87,7 @@ export default {
       this.localWebsocket.close()
     },
     addV() {
-
+      this.receiveMsgHandle()
     },
     pm(userId) {
       console.log('pm:' + userId)
@@ -101,6 +103,15 @@ export default {
     },
     changeView(userId) {
       console.log('changeView:' + userId)
+    },
+    notice(msg) {
+      console.log('notice:' + msg)
+    },
+    sendChat(msg) {
+      console.log('sendChat:' + msg)
+    },
+    receiveMsgHandle(msg) {
+      this.receiveMsg = 'nnn:' + new Date()
     },
     async  initLocalWebsocket() { // 初始化weosocket
       const response = await getUrl()
@@ -144,6 +155,10 @@ export default {
   .el-aside {
     background-color: #D3DCE6;
     margin: 0;
+    padding-top: 8px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 20px;
   }
 
   .el-main {
