@@ -173,6 +173,8 @@ export default {
     },
     sendChat(msg) {
       console.log('sendChat:' + msg)
+      msg = new MessageModel(TYPE_COMMAND_CHAT, this.roomFromDate.roomId, this.name + ': ' + msg + '\n')
+      this.wsSend(msg)
     },
     receiveMsgHandle(msg) {
       this.receiveMsg = 'nnn:' + new Date()
@@ -236,6 +238,7 @@ export default {
       switch (message.command) {
         case TYPE_COMMAND_SUCCESS: this.successHandle(message); break
         case TYPE_COMMAND_ERROR:this.$message.error(message.message); break
+        case TYPE_COMMAND_CHAT:this.receiveMsg = message.message; break
       }
     },
     wsSend(data) { // 数据发送
@@ -259,7 +262,7 @@ class MessageModel {
 const TYPE_COMMAND_ROOM_ENTER = 'enterRoom'
 const TYPE_COMMAND_ROOM_CREATE = 'createRoom'
 const TYPE_COMMAND_ROOM_LIST = 'roomList'
-const TYPE_COMMAND_DIALOGUE = 'dialogue'
+const TYPE_COMMAND_PM = 'pm'
 const TYPE_COMMAND_READY = 'ready'
 const TYPE_COMMAND_OFFER = 'offer'
 const TYPE_COMMAND_ANSWER = 'answer'
@@ -267,7 +270,7 @@ const TYPE_COMMAND_CANDIDATE = 'candidate'
 
 const TYPE_COMMAND_ERROR = 'error'
 const TYPE_COMMAND_SUCCESS = 'success'
-
+const TYPE_COMMAND_CHAT = 'chat'
 </script>
 
 <style lang="scss">
