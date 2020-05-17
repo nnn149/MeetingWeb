@@ -43,7 +43,7 @@ import Preview from './components/Preview'
 import Chat from './components/Chat'
 import adapter from 'webrtc-adapter'
 import { getUrl } from '@/api/websocketInfo'
-
+import { mapGetters } from 'vuex'
 export default {
   name: 'Meeting',
   components: { Preview, Chat },
@@ -65,8 +65,10 @@ export default {
       wsUrl: undefined,
       receiveMsg: '',
       isInRoom: false,
+      isRoomAdmin: false,
       clients: [{
         userId: '0',
+        nickname: '无名',
         roomId: '0',
         localStream: undefined
       }],
@@ -84,12 +86,21 @@ export default {
       }
     }
   },
+  computed: {
+    ...mapGetters([
+      'token',
+      'name'
+    ])
+  },
   async mounted() {
     this.dialogFormVisible = true
+
+    var m = new MessageModel(TYPE_COMMAND_ROOM_CREATE)
+    console.log(JSON.stringify(m))
     try {
       await this.initLocalWebsocket()
     } catch (e) {
-      console.log('websocket错误:' + e.message())
+      console.log('websocket错误:' + e.message)
       this.$message.error('网络连接错误!')
       this.closeView()
     }
@@ -102,6 +113,7 @@ export default {
       this.localWebsocket.close() // 离开路由之后断开localWebsocket连接
     }
   },
+
   methods: {
     // 设置本地播放器
     startV() {
@@ -165,13 +177,29 @@ export default {
     receiveMsgHandle(msg) {
       this.receiveMsg = 'nnn:' + new Date()
     },
+    successHandle(message) {
+      this.isInRoom = true
+      this.dialogFormVisible = false
+      if (message.message === 'create') {
+        console.log('创建房间成功')
+        this.isRoomAdmin = true
+      } else {
+        this.isRoomAdmin = false
+      }
+      this.$message.success('成功!')
+    },
     createOrEnterRoom(method) {
       this.$refs.romeForm.validate((valid) => {
         if (valid) {
+          var msg
           if (method === 'create') {
-            console.log('创建房间:' + this.roomFromDate.roomId)
+            msg = new MessageModel(TYPE_COMMAND_ROOM_CREATE, this.roomFromDate.roomId, '', '', this.roomFromDate.roomPw, this.token)
+            console.log('创建房间:' + JSON.stringify(msg))
+            this.wsSend(msg)
           } else {
             console.log('加入房间:' + this.roomFromDate.roomId)
+            msg = new MessageModel(TYPE_COMMAND_ROOM_ENTER, this.roomFromDate.roomId, '', '', this.roomFromDate.roomPw, this.token)
+            this.wsSend(msg)
           }
         } else {
           console.log('表单验证错误')
@@ -203,16 +231,43 @@ export default {
       }
     },
     wseReceiveMessage(e) { // 数据接收
-      const redata = JSON.parse(e.data)
-      console.log(redata)
+      const message = JSON.parse(e.data)
+      console.log('ws收到:' + e.data)
+      switch (message.command) {
+        case TYPE_COMMAND_SUCCESS: this.successHandle(message); break
+        case TYPE_COMMAND_ERROR:this.$message.error(message.message); break
+      }
     },
-    wsSend(Data) { // 数据发送
-      this.localWebsocket.send(Data)
+    wsSend(data) { // 数据发送
+      this.localWebsocket.send(JSON.stringify(data))
     }
 
   }
 
 }
+class MessageModel {
+  constructor(command, roomId, message, userId, roomPw, token) {
+    this.command = command
+    this.userId = userId
+    this.roomId = roomId
+    this.message = message
+    this.roomPw = roomPw
+    this.token = token
+  }
+}
+
+const TYPE_COMMAND_ROOM_ENTER = 'enterRoom'
+const TYPE_COMMAND_ROOM_CREATE = 'createRoom'
+const TYPE_COMMAND_ROOM_LIST = 'roomList'
+const TYPE_COMMAND_DIALOGUE = 'dialogue'
+const TYPE_COMMAND_READY = 'ready'
+const TYPE_COMMAND_OFFER = 'offer'
+const TYPE_COMMAND_ANSWER = 'answer'
+const TYPE_COMMAND_CANDIDATE = 'candidate'
+
+const TYPE_COMMAND_ERROR = 'error'
+const TYPE_COMMAND_SUCCESS = 'success'
+
 </script>
 
 <style lang="scss">

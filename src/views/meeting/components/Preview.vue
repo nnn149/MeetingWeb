@@ -12,7 +12,7 @@
       </span>
       <span>
         <i class="el-icon-chat-dot-round" @click="$emit('pmEvent',client.userId)" />
-        <svg-icon icon-class="eye-open" @click="$emit('viewEvent',client.userId)" />
+        <svg-icon icon-class="eye" @click="$emit('viewEvent',client.userId)" />
         <i class="el-icon-turn-off-microphone" @click="$emit('microEvent',client.userId)" />
         <i class="el-icon-full-screen" @click="$emit('fullEvent',client.userId)" />
         <i style="color: #ff4250;horiz-align: right" class="el-icon-error" @click="$emit('kickEvent',client.userId)" />
