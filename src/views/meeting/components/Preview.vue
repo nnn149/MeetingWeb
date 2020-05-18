@@ -8,7 +8,7 @@
     <div class="console-container">
       <span style="max-width: 130px">
         <i class="el-icon-s-custom" />
-        <span>{{ client.userId }}</span>
+        <span>{{ client.nickname }}</span>
       </span>
       <span>
         <i class="el-icon-chat-dot-round" @click="$emit('pmEvent',client.userId)" />

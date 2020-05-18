@@ -3,7 +3,18 @@
 
     <el-container>
       <el-header height="214px">
-        <preview v-for="client in clients" :key="client.userId" :client="client" @pmEvent="pm" @microEvent="changeMicro" @fullEvent="fullScreen" @kickEvent="kick" @viewEvent="changeView" />
+        <template v-for="(client) in clients">
+          <preview
+            v-if="client!==undefined"
+            :key="client.userId"
+            :client="client"
+            @pmEvent="pm"
+            @microEvent="changeMicro"
+            @fullEvent="fullScreen"
+            @kickEvent="kick"
+            @viewEvent="changeView"
+          />
+        </template>
       </el-header>
       <el-container>
         <el-main>
@@ -16,7 +27,9 @@
           </el-button>
 
         </el-main>
-        <el-aside width="350px"><Chat :receive-msg="receiveMsg" @chatEvent="sendChat" @noticeEvent="notice" /></el-aside>
+        <el-aside width="350px">
+          <Chat :receive-msg="receiveMsg" @chatEvent="sendChat" @noticeEvent="notice" />
+        </el-aside>
       </el-container>
     </el-container>
 
@@ -44,6 +57,7 @@ import Chat from './components/Chat'
 import adapter from 'webrtc-adapter'
 import { getUrl } from '@/api/websocketInfo'
 import { mapGetters } from 'vuex'
+
 export default {
   name: 'Meeting',
   components: { Preview, Chat },
@@ -68,9 +82,10 @@ export default {
       isRoomAdmin: false,
       clients: [{
         userId: '0',
-        nickname: '无名',
+        nickname: '未连接',
         roomId: '0',
-        localStream: undefined
+        localStream: undefined,
+        peerConnection: undefined
       }],
       roomFromDate: {
         roomId: '',
@@ -124,20 +139,15 @@ export default {
           const c0 = {
             userId: '0',
             roomId: '0',
-            localStream: mediaStream
+            localStream: mediaStream,
+            peerConnection: undefined
           }
           this.$set(this.clients, 0, c0)
 
-          const c1 = {
-            userId: '1',
-            roomId: '1',
-            localStream: mediaStream
-          }
-          this.$set(this.clients, 1, c1)
-
-          console.log(this.clients)
           console.log('本地播放器设置成功')
-          var rtcPeerConnection = new RTCPeerConnection(null)
+
+          const rtcPeerConnection = new RTCPeerConnection(iceServers)
+
           console.log(rtcPeerConnection)
         }).catch((e) => {
           console.log('失败 ' + e.message)
@@ -177,20 +187,18 @@ export default {
       this.wsSend(msg)
     },
     receiveMsgHandle(msg) {
-      this.receiveMsg = 'nnn:' + new Date()
-    },
-    successHandle(message) {
-      this.isInRoom = true
-      this.dialogFormVisible = false
-      if (message.message === 'create') {
-        console.log('创建房间成功')
-        this.isRoomAdmin = true
-      } else {
-        this.isRoomAdmin = false
+      // clients[0]默认就有
+      const c1 = {
+        userId: '11'
       }
-      this.$message.success('成功!')
+      this.$set(this.clients, 1, c1)
+      const c3 = {
+        userId: '33'
+      }
+      this.$set(this.clients, 3, c3)
+      console.log(this.clients)
     },
-    createOrEnterRoom(method) {
+    createOrEnterRoom(method) { // 进入房间
       this.$refs.romeForm.validate((valid) => {
         if (valid) {
           var msg
@@ -209,12 +217,91 @@ export default {
         }
       })
     },
+    successHandle(message) {
+      this.isInRoom = true
+      this.dialogFormVisible = false
+      this.clients[0].userId = message.userId
+      this.clients[0].roomId = message.roomId
+      this.clients[0].nickname = this.name
+      if (message.message === 'create') {
+        console.log('创建房间成功')
+        this.isRoomAdmin = true
+      } else {
+        console.log('进入房间成功')
+        this.isRoomAdmin = false
+      }
+      console.log(this.clients[0])
+      // 广播 自己准备好了,其他用户收到后就会创建连接
+      var msg = new MessageModel(TYPE_COMMAND_READY, this.roomFromDate.roomId, this.name, message.userId)
+      console.log('发送准备完毕广播' + msg)
+      this.wsSend(msg)
+      this.$message.success('成功!')
+    },
+    readyHandle(message) { // 收到上线的用户准备好信号，创建RTCPeerConnection准备与他连接并发送offer
+      var rtcPeerConnection = new RTCPeerConnection(iceServers)
+      rtcPeerConnection.ontrack = this.onTrack
+      rtcPeerConnection.onicecandidate = this.onIceCandidate
+      var remoteClient = {
+        userId: message.userId,
+        roomId: message.roomId,
+        nickname: message.message,
+        localStream: undefined,
+        peerConnection: rtcPeerConnection
+      }
+      this.$set(this.clients, Number(message.userId), remoteClient)
+      console.log('添加了一个连接')
+      console.log(this.clients)
+      console.log('创建offer')
+      rtcPeerConnection.createOffer(offerOptions).then((description) => {
+        console.log('设置本地Description')
+        rtcPeerConnection.setLocalDescription(description)
+        var msg = new MessageModel(TYPE_COMMAND_OFFER, this.clients[0].roomId, description, message.userId, this.name) // 字段不够用,把名字临时放在roomPw字段
+        console.log('发送offer:' + JSON.stringify(msg))
+        this.wsSend(msg)
+      }).catch()
+    },
+    offerHandle(message) {
+      var rtcPeerConnection = new RTCPeerConnection(iceServers)
+      rtcPeerConnection.ontrack = this.onTrack
+      rtcPeerConnection.onicecandidate = this.onIceCandidate
+      var remoteClient = {
+        userId: message.userId,
+        roomId: message.roomId,
+        nickname: message.roomPw,
+        localStream: undefined,
+        peerConnection: rtcPeerConnection
+      }
+      this.$set(this.clients, Number(message.userId), remoteClient)
+      console.log('添加了一个连接')
+      console.log(this.clients)
+      console.log('接受offer')
+      var sdpMessage = message.message
+      // sdpMessage.replace(/[\r]/g, '\\r').replace(/[\n]/g, '\\n')
+      console.log(sdpMessage)
+      var sdp = JSON.parse(sdpMessage)
+      rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(sdp))
+        .then(
+          console.log('setRemoteDescription 完毕')
+        )
+      rtcPeerConnection.createAnswer(offerOptions)
+        .then((description) => {
+          console.log('设置本地Description')
+          rtcPeerConnection.setLocalDescription(description)
+          var msg = new MessageModel(TYPE_COMMAND_ANSWER, this.clients[0].roomId, description, message.userId) // 字段不够用,把名字临时放在roomPw字段
+          console.log('发送answer:' + JSON.stringify(msg))
+          this.wsSend(msg)
+        })
+        .catch(() => {
+          console.log('setLocalAndAnswer 错误')
+        }
+        )
+    },
     closeView() {
       if (this.isInRoom === false) {
         this.$router.go(-1)
       }
     },
-    async  initLocalWebsocket() {
+    async initLocalWebsocket() {
       console.log('初始化weosocket')
       const response = await getUrl()
       this.wsUrl = response.data
@@ -233,21 +320,42 @@ export default {
       }
     },
     wseReceiveMessage(e) { // 数据接收
+      console.log('数据接收:')
+      console.log(e.data)
       const message = JSON.parse(e.data)
       console.log('ws收到:' + e.data)
       switch (message.command) {
-        case TYPE_COMMAND_SUCCESS: this.successHandle(message); break
-        case TYPE_COMMAND_ERROR:this.$message.error(message.message); break
-        case TYPE_COMMAND_CHAT:this.receiveMsg = message.message; break
+        case TYPE_COMMAND_SUCCESS:
+          this.successHandle(message)
+          break
+        case TYPE_COMMAND_ERROR:
+          this.$message.error(message.message)
+          break
+        case TYPE_COMMAND_CHAT:
+          this.receiveMsg = message.message
+          break
+        case TYPE_COMMAND_READY:
+          this.readyHandle(message)
+          break
+        case TYPE_COMMAND_OFFER:
+          this.offerHandle(message)
+          break
       }
     },
     wsSend(data) { // 数据发送
       this.localWebsocket.send(JSON.stringify(data))
+    },
+    onIceCandidate(event) {
+      console.log('收到Candidate')
+    },
+    onTrack(event) {
+      console.log('收到数据流')
     }
 
   }
 
 }
+
 class MessageModel {
   constructor(command, roomId, message, userId, roomPw, token) {
     this.command = command
@@ -271,10 +379,22 @@ const TYPE_COMMAND_CANDIDATE = 'candidate'
 const TYPE_COMMAND_ERROR = 'error'
 const TYPE_COMMAND_SUCCESS = 'success'
 const TYPE_COMMAND_CHAT = 'chat'
+
+const iceServers = {
+  'iceServers': [
+    { url: 'stun:stun.ekiga.net' },
+    { url: 'stun:stun.ideasip.com' }
+  ]
+}
+const offerOptions = {
+  iceRestart: true,
+  offerToReceiveAudio: true,
+  offerToReceiveVideo: true
+}
 </script>
 
 <style lang="scss">
-  .el-header{
+  .el-header {
     background-color: #B3C0D1;
     padding: 0;
     margin: 0;
@@ -297,7 +417,8 @@ const TYPE_COMMAND_CHAT = 'chat'
 
     padding: 0;
   }
-  .el-container{
+
+  .el-container {
     height: calc(100vh - 84px)
   }
 
