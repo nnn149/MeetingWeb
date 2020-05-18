@@ -249,14 +249,14 @@ export default {
         peerConnection: rtcPeerConnection
       }
       this.$set(this.clients, Number(message.userId), remoteClient)
-      console.log('添加了一个连接')
+      console.log('准备完毕,添加了一个连接')
       console.log(this.clients)
       console.log('创建offer')
       rtcPeerConnection.createOffer(offerOptions).then((description) => {
-        console.log('设置本地Description')
+        console.log('创建offer,设置本地Description')
         rtcPeerConnection.setLocalDescription(description)
-        var msg = new MessageModel(TYPE_COMMAND_OFFER, this.clients[0].roomId, description, message.userId, this.name) // 字段不够用,把名字临时放在roomPw字段
-        console.log('发送offer:' + JSON.stringify(msg))
+        var msg = new MessageModel(TYPE_COMMAND_OFFER, this.clients[0].roomId, this.messageDateToString(description), message.userId, this.name) // 字段不够用,把名字临时放在roomPw字段
+        console.log('发送offer')
         this.wsSend(msg)
       }).catch()
     },
@@ -272,29 +272,31 @@ export default {
         peerConnection: rtcPeerConnection
       }
       this.$set(this.clients, Number(message.userId), remoteClient)
-      console.log('添加了一个连接')
+      console.log('接受到offer,添加了一个连接')
       console.log(this.clients)
-      console.log('接受offer')
-      var sdpMessage = message.message
-      // sdpMessage.replace(/[\r]/g, '\\r').replace(/[\n]/g, '\\n')
-      console.log(sdpMessage)
-      var sdp = JSON.parse(sdpMessage)
+      var sdp = JSON.parse(message.message)
       rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(sdp))
         .then(
-          console.log('setRemoteDescription 完毕')
+          console.log('收到offer,设置远程Description 完毕')
         )
       rtcPeerConnection.createAnswer(offerOptions)
         .then((description) => {
-          console.log('设置本地Description')
+          console.log('创建answer,设置本地Description')
           rtcPeerConnection.setLocalDescription(description)
-          var msg = new MessageModel(TYPE_COMMAND_ANSWER, this.clients[0].roomId, description, message.userId) // 字段不够用,把名字临时放在roomPw字段
+          var msg = new MessageModel(TYPE_COMMAND_ANSWER, this.clients[0].roomId, this.messageDateToString(description), message.userId)
           console.log('发送answer:' + JSON.stringify(msg))
           this.wsSend(msg)
         })
         .catch(() => {
-          console.log('setLocalAndAnswer 错误')
+          console.log('创建answer,设置本地AndAnswer 错误')
         }
         )
+    },
+    answerHandle(message) {
+      this.clients[Number(message.userId)].peerConnection.setRemoteDescription(JSON.parse(message.message)).then(
+        console.log('收到answer,设置远程描述完毕')
+      )
+      // this.$set(this.clients[Number(message.userId)], 'peerConnection', this.clients[Number(message.userId)].peerConnection)
     },
     closeView() {
       if (this.isInRoom === false) {
@@ -322,8 +324,8 @@ export default {
     wseReceiveMessage(e) { // 数据接收
       console.log('数据接收:')
       console.log(e.data)
-      const message = JSON.parse(e.data)
-      console.log('ws收到:' + e.data)
+      var str = e.data.toString().replace(/!@#/g, '')
+      const message = JSON.parse(str)
       switch (message.command) {
         case TYPE_COMMAND_SUCCESS:
           this.successHandle(message)
@@ -338,8 +340,10 @@ export default {
           this.readyHandle(message)
           break
         case TYPE_COMMAND_OFFER:
+          message.message
           this.offerHandle(message)
           break
+        case TYPE_COMMAND_ANSWER: this.answerHandle(message); break
       }
     },
     wsSend(data) { // 数据发送
@@ -350,6 +354,9 @@ export default {
     },
     onTrack(event) {
       console.log('收到数据流')
+    },
+    messageDateToString(data) { // 如果message字段是对象，就把他变成字符串，这样服务器解析不会报错
+      return '!@#' + JSON.stringify(data) + '!@#'
     }
 
   }
