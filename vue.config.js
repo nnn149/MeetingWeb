@@ -2,6 +2,11 @@
 const path = require('path')
 const defaultSettings = require('./src/settings.js')
 
+/* ---------添加以下2句，引入https和fs---------*/
+const https = require('https')
+const fs = require('fs')
+/* ---------添加以上2句，引入https和fs---------*/
+
 function resolve(dir) {
   return path.join(__dirname, dir)
 }
@@ -35,7 +40,15 @@ module.exports = {
     overlay: {
       warnings: false,
       errors: true
+    },
+    disableHostCheck: true,
+    /* ---------添加https配置---------*/
+    host: '192.168.2.203',
+    https: {
+      key: fs.readFileSync(path.join(__dirname, './build/cert/privatekey.pem')),
+      cert: fs.readFileSync(path.join(__dirname, './build/cert/certificate.pem'))
     }
+    /* ---------添加https配置---------*/
   },
   configureWebpack: {
     // provide the app's title in webpack's name field, so that
