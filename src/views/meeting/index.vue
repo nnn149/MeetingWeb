@@ -109,7 +109,7 @@ export default {
   },
   async mounted() {
     this.dialogFormVisible = true
-
+    this.startV()
     var m = new MessageModel(TYPE_COMMAND_ROOM_CREATE)
     console.log(JSON.stringify(m))
     try {
@@ -143,14 +143,11 @@ export default {
             peerConnection: undefined
           }
           this.$set(this.clients, 0, c0)
-
+          console.log('本地流')
+          console.log(this.clients[0].localStream)
           console.log('本地播放器设置成功')
-
-          const rtcPeerConnection = new RTCPeerConnection(iceServers)
-
-          console.log(rtcPeerConnection)
         }).catch((e) => {
-          console.log('失败 ' + e.message)
+          console.log('本地播放器设置失败 ' + e.message)
         })
     },
     stopV() {
@@ -229,16 +226,22 @@ export default {
       } else {
         console.log('进入房间成功')
         this.isRoomAdmin = false
+
+        // 广播 自己准备好了,其他用户收到后就会创建连接
+        var msg = new MessageModel(TYPE_COMMAND_READY, this.roomFromDate.roomId, this.name, message.userId)
+        console.log('发送准备完毕广播' + msg)
+        this.wsSend(msg)
+        this.$message.success('成功!')
       }
-      console.log(this.clients[0])
-      // 广播 自己准备好了,其他用户收到后就会创建连接
-      var msg = new MessageModel(TYPE_COMMAND_READY, this.roomFromDate.roomId, this.name, message.userId)
-      console.log('发送准备完毕广播' + msg)
-      this.wsSend(msg)
-      this.$message.success('成功!')
     },
-    readyHandle(message) { // 收到上线的用户准备好信号，创建RTCPeerConnection准备与他连接并发送offer
+    readyHandle(message) { // 收到上线的用户准备好信号，创建RTCPeerConnectio准备与他连接并发送offer
       var rtcPeerConnection = new RTCPeerConnection(iceServers)
+      rtcPeerConnection.userId = message.userId
+
+      for (const track of this.clients[0].localStream.getTracks()) {
+        rtcPeerConnection.addTrack(track, this.clients[0].localStream)
+      }
+
       rtcPeerConnection.ontrack = this.onTrack
       rtcPeerConnection.onicecandidate = this.onIceCandidate
       var remoteClient = {
@@ -254,6 +257,7 @@ export default {
       console.log('创建offer')
       rtcPeerConnection.createOffer(offerOptions).then((description) => {
         console.log('创建offer,设置本地Description')
+        console.log(description)
         rtcPeerConnection.setLocalDescription(description)
         var msg = new MessageModel(TYPE_COMMAND_OFFER, this.clients[0].roomId, this.messageDateToString(description), message.userId, this.name) // 字段不够用,把名字临时放在roomPw字段
         console.log('发送offer')
@@ -262,6 +266,13 @@ export default {
     },
     offerHandle(message) {
       var rtcPeerConnection = new RTCPeerConnection(iceServers)
+      rtcPeerConnection.userId = message.userId
+      console.log('本地流')
+      console.log(this.clients[0].localStream)
+      for (const track of this.clients[0].localStream.getTracks()) {
+        rtcPeerConnection.addTrack(track, this.clients[0].localStream)
+      }
+
       rtcPeerConnection.ontrack = this.onTrack
       rtcPeerConnection.onicecandidate = this.onIceCandidate
       var remoteClient = {
@@ -284,7 +295,7 @@ export default {
           console.log('创建answer,设置本地Description')
           rtcPeerConnection.setLocalDescription(description)
           var msg = new MessageModel(TYPE_COMMAND_ANSWER, this.clients[0].roomId, this.messageDateToString(description), message.userId)
-          console.log('发送answer:' + JSON.stringify(msg))
+          // console.log('发送answer:' + JSON.stringify(msg))
           this.wsSend(msg)
         })
         .catch(() => {
@@ -297,6 +308,29 @@ export default {
         console.log('收到answer,设置远程描述完毕')
       )
       // this.$set(this.clients[Number(message.userId)], 'peerConnection', this.clients[Number(message.userId)].peerConnection)
+    },
+    onIceCandidate(event) {
+      console.log('onIceCandidate')
+      // console.log(event)
+      if (event.candidate === null) {
+        console.log('Candidata为null')
+        return
+      }
+      var msg = new MessageModel(TYPE_COMMAND_CANDIDATE, this.clients[0].roomId, this.messageDateToString(event.candidate), event.target.userId)
+      // console.log('发送Candidate:' + JSON.stringify(msg))
+      this.wsSend(msg)
+    },
+    candidateHandle(message) {
+      console.log('收到Candidata')
+      console.log(message)
+      console.log(this.clients)
+      var newIceCandidata = new RTCIceCandidate(JSON.parse(message.message))
+      this.clients[Number(message.userId)].peerConnection.addIceCandidate(newIceCandidata)
+        .then(console.log('添加Candidata成功')).catch((error) => { console.log('添加Candidata失败:' + error) })
+    },
+    onTrack(event) {
+      console.log('收到数据流' + event.target.userId)
+      this.clients[Number(event.target.userId)].localStream = event.streams[0]
     },
     closeView() {
       if (this.isInRoom === false) {
@@ -343,17 +377,16 @@ export default {
           message.message
           this.offerHandle(message)
           break
-        case TYPE_COMMAND_ANSWER: this.answerHandle(message); break
+        case TYPE_COMMAND_ANSWER:
+          this.answerHandle(message)
+          break
+        case TYPE_COMMAND_CANDIDATE:
+          this.candidateHandle(message)
+          break
       }
     },
     wsSend(data) { // 数据发送
       this.localWebsocket.send(JSON.stringify(data))
-    },
-    onIceCandidate(event) {
-      console.log('收到Candidate')
-    },
-    onTrack(event) {
-      console.log('收到数据流')
     },
     messageDateToString(data) { // 如果message字段是对象，就把他变成字符串，这样服务器解析不会报错
       return '!@#' + JSON.stringify(data) + '!@#'
