@@ -3,11 +3,12 @@
 
     <el-container>
       <el-header height="214px">
-        <template v-for="(client,index) in clients">
+        <template v-for="(client) in clients">
           <preview
-            v-if="client!==undefined && index!=0"
+            v-if="client!==undefined"
             :key="client.userId"
             :client="client"
+            :is-room-admin="clients[0].isRoomAdmin"
             @pmEvent="pm"
             @microEvent="changeMicro"
             @fullEvent="fullScreen"
@@ -29,6 +30,11 @@
         </el-main>
         <el-aside width="350px">
           <Chat :receive-msg="receiveMsg" @chatEvent="sendChat" @noticeEvent="notice" />
+          <div style="text-align: center;margin-top: 10px">
+            <el-button type="danger" round size="mini">全体禁言</el-button>
+            <el-button type="danger" round size="mini">全体禁音</el-button>
+            <el-button type="danger" round size="mini">全体禁视</el-button>
+          </div>
         </el-aside>
       </el-container>
     </el-container>
@@ -79,14 +85,17 @@ export default {
       wsUrl: undefined,
       receiveMsg: '',
       isInRoom: false,
-      isRoomAdmin: false,
       clients: [{
         userId: '0',
         nickname: '未连接',
         roomId: '0',
         localStream: undefined,
         peerConnection: undefined,
-        isSelf: false
+        muted: false,
+        view: true,
+        chat: true,
+        isSelf: false,
+        isRoomAdmin: false
       }],
       roomFromDate: {
         roomId: '',
@@ -140,9 +149,14 @@ export default {
           const c0 = {
             userId: '0',
             roomId: '0',
+            nickname: '未连接',
             localStream: mediaStream,
             peerConnection: undefined,
-            muted: false
+            muted: false,
+            view: true,
+            chat: true,
+            isSelf: true,
+            isRoomAdmin: false
           }
           this.$set(this.clients, 0, c0)
           console.log('本地流')
@@ -163,19 +177,78 @@ export default {
     },
     pm(userId) {
       console.log('pm:' + userId)
+      if (this.clients[userId].chat) { // 全员发送chat关闭
+        this.clients[userId].chat = false
+      } else { // 全员发送chat开启
+        this.clients[userId].chat = true
+      }
     },
     changeMicro(userId) {
       console.log('changeMicro:' + userId)
+      if (userId === this.clients[0].userId) { // 自己开关麦克风，通知所有人
+        if (this.clients[0].muted) {
+          // 打开麦克风
+          this.clients[0].muted = false
+        } else {
+          // 关闭麦克风
+          this.clients[0].muted = true
+        }
+      } else { // 别人
+        if (this.clients[0].isRoomAdmin) { // 自己是管理员，就要彻底开关他的麦克风
+          if (this.clients[Number(userId)].muted) {
+            // 通知所有人打开此人麦克风
+            this.clients[Number(userId)].muted = false
+          } else {
+            // 通知所有人关闭此人麦克风
+            this.clients[Number(userId)].muted = true
+          }
+        } else {
+          if (this.clients[Number(userId)].muted) {
+            this.clients[Number(userId)].muted = false
+          } else {
+            this.clients[Number(userId)].muted = true
+          }
+        }
+      }
     },
     fullScreen(userId) {
       console.log('fullScreen:' + userId)
-      this.$refs.video_full.srcObject = this.clients[userId].localStream
+      if (userId === this.clients[0].userId) {
+        this.$refs.video_full.srcObject = this.clients[0].localStream
+      } else {
+        this.$refs.video_full.srcObject = this.clients[userId].localStream
+      }
     },
     kick(userId) {
       console.log('kick:' + userId)
     },
     changeView(userId) {
       console.log('changeView:' + userId)
+      if (userId === this.clients[0].userId) { // 自己开关视频，通知所有人
+        if (this.clients[0].view) {
+          // 打开视频
+          this.clients[0].view = false
+        } else {
+          // 关闭视频
+          this.clients[0].view = true
+        }
+      } else { // 别人
+        if (this.clients[0].isRoomAdmin) { // 自己是管理员，就要彻底开关他的视频
+          if (this.clients[Number(userId)].view) {
+            // 通知所有人打开此人视频
+            this.clients[Number(userId)].view = false
+          } else {
+            // 通知所有人关闭此人视频
+            this.clients[Number(userId)].view = true
+          }
+        } else {
+          if (this.clients[Number(userId)].view) {
+            this.clients[Number(userId)].view = false
+          } else {
+            this.clients[Number(userId)].view = true
+          }
+        }
+      }
     },
     notice(msg) {
       console.log('notice:' + msg)
@@ -224,10 +297,10 @@ export default {
       this.clients[0].nickname = this.name
       if (message.message === 'create') {
         console.log('创建房间成功')
-        this.isRoomAdmin = true
+        this.clients[0].isRoomAdmin = true
       } else {
         console.log('进入房间成功')
-        this.isRoomAdmin = false
+        this.clients[0].isRoomAdmin = false
       }
       // 广播 自己准备好了,其他用户收到后就会创建连接
       var msg = new MessageModel(TYPE_COMMAND_READY, this.roomFromDate.roomId, this.name, message.userId)
@@ -237,17 +310,7 @@ export default {
     },
     readyHandle(message) { // 收到上线的用户准备好信号，创建RTCPeerConnectio准备与他连接并发送offer
       if (this.clients[0].userId === message.userId) { // 是自己准备好了
-        const remoteClient = {
-          userId: message.userId,
-          roomId: message.roomId,
-          nickname: message.message,
-          localStream: this.clients[0].localStream,
-          peerConnection: undefined,
-          muted: false,
-          isSelf: true
-        }
-        this.$set(this.clients, Number(message.userId), remoteClient)
-        console.log('本地窗口创建')
+        return
       } else {
         var rtcPeerConnection = new RTCPeerConnection(iceServers)
         rtcPeerConnection.userId = message.userId
@@ -263,7 +326,10 @@ export default {
           localStream: undefined,
           peerConnection: rtcPeerConnection,
           muted: false,
-          isSelf: false
+          view: true,
+          chat: true,
+          isSelf: false,
+          isRoomAdmin: false
         }
         this.$set(this.clients, Number(message.userId), remoteClient)
         console.log('准备完毕,添加了一个连接')
@@ -297,7 +363,10 @@ export default {
         localStream: undefined,
         peerConnection: rtcPeerConnection,
         muted: false,
-        isSelf: false
+        view: true,
+        chat: true,
+        isSelf: false,
+        isRoomAdmin: false
       }
       this.$set(this.clients, Number(message.userId), remoteClient)
       console.log('接受到offer,添加了一个连接')

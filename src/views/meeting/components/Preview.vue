@@ -2,7 +2,10 @@
   <div class="Preview-container">
     <div style="background: black">
       <div class="video-container">
-        <video autoplay :muted.prop="client.muted || client.isSelf" :srcObject.prop="client.localStream" style="height: 100%;width: 100%" />
+        <video v-show="client.view" autoplay :muted.prop="client.muted || client.isSelf" :srcObject.prop="client.localStream" style="height: 100%;width: 100%" />
+        <i v-show="!client.view && !client.muted" class="el-icon-mic clientStatus" />
+        <i v-show="!client.view && client.muted && client.chat" class="el-icon-chat-dot-round clientStatus" />
+        <i v-show="!client.view && client.muted && !client.chat" class="el-icon-circle-close clientStatus" />
       </div>
     </div>
     <div class="console-container">
@@ -10,15 +13,19 @@
         <i class="el-icon-s-custom" />
         <span>{{ client.nickname }}</span>
       </span>
-      <span>
-        <i class="el-icon-chat-dot-round" @click="$emit('pmEvent',client.userId)" />
-        <svg-icon icon-class="eye" @click="$emit('viewEvent',client.userId)" />
+      <span style="float: right">
+        <i v-show="client.view" class="el-icon-full-screen" @click="$emit('fullEvent',client.userId)" />
+
+        <svg-icon v-show="client.view" icon-class="eye-open" @click="$emit('viewEvent',client.userId)" />
+        <svg-icon v-show="!client.view" icon-class="eye" @click="$emit('viewEvent',client.userId)" />
 
         <i v-show="client.muted" class="el-icon-turn-off-microphone" @click="$emit('microEvent',client.userId)" />
         <i v-show="!client.muted" class="el-icon-microphone" @click="$emit('microEvent',client.userId)" />
 
-        <i class="el-icon-full-screen" @click="$emit('fullEvent',client.userId)" />
-        <i style="color: #ff4250;horiz-align: right" class="el-icon-error" @click="$emit('kickEvent',client.userId)" />
+        <i v-show="!client.isSelf && isRoomAdmin && client.chat" class="el-icon-chat-dot-round" @click="$emit('pmEvent',client.userId)" />
+        <i v-show="!client.isSelf && isRoomAdmin && !client.chat" class="el-icon-chat-round" @click="$emit('pmEvent',client.userId)" />
+
+        <i v-if="client.isRoomAdmin" style="color: #ff4250;horiz-align: right" class="el-icon-error" @click="$emit('kickEvent',client.userId)" />
       </span>
     </div>
   </div>
@@ -32,6 +39,10 @@ export default {
     client: {
       type: Object,
       default: null
+    },
+    isRoomAdmin: {
+      type: Boolean,
+      default: false
     }
   }
 }
@@ -40,7 +51,7 @@ export default {
 <style lang="scss" scoped>
 .Preview-container{
   display:inline-block;
-  width: 260px;
+  width: 240px;
   height: 200px;
   margin-right: 3px;
 }
@@ -51,6 +62,7 @@ export default {
     /*mask-image: url("~@/assets/svg/people.svg");*/
     /*mask-repeat: no-repeat;*/
     /*mask-position: center;*/
+    text-align: center;
   }
   .console-container{
     height: 26px;
@@ -63,5 +75,9 @@ export default {
 .console-container .svg-icon {
   font-size: 22px;
 }
+  .clientStatus {
+    font-size: 150px;
+    line-height: 170px
+  }
 
 </style>

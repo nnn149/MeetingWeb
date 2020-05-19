@@ -4,7 +4,6 @@
     <el-input v-model="sendText" placeholder="请输入内容" maxlength="64" class="input-with-select">
       <el-button slot="prepend" size="mini" icon="el-icon-message-solid" @click="$emit('noticeEvent',sendText)" />
       <el-button slot="append" size="mini" icon="el-icon-s-promotion" @click="$emit('chatEvent',sendText)" />
-
     </el-input>
   </div>
 </template>
