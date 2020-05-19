@@ -2,7 +2,7 @@
   <div class="Preview-container">
     <div style="background: black">
       <div class="video-container">
-        <video autoplay :muted.prop="client.muted" :srcObject.prop="client.localStream" style="height: 100%;width: 100%" />
+        <video autoplay :muted.prop="client.muted || client.isSelf" :srcObject.prop="client.localStream" style="height: 100%;width: 100%" />
       </div>
     </div>
     <div class="console-container">
@@ -13,8 +13,10 @@
       <span>
         <i class="el-icon-chat-dot-round" @click="$emit('pmEvent',client.userId)" />
         <svg-icon icon-class="eye" @click="$emit('viewEvent',client.userId)" />
-        <i v-show="client.muted===true" class="el-icon-turn-off-microphone" @click="$emit('microEvent',client.userId)" />
-        <i v-show="client.muted!==true" class="el-icon-microphone" @click="$emit('microEvent',client.userId)" />
+
+        <i v-show="client.muted" class="el-icon-turn-off-microphone" @click="$emit('microEvent',client.userId)" />
+        <i v-show="!client.muted" class="el-icon-microphone" @click="$emit('microEvent',client.userId)" />
+
         <i class="el-icon-full-screen" @click="$emit('fullEvent',client.userId)" />
         <i style="color: #ff4250;horiz-align: right" class="el-icon-error" @click="$emit('kickEvent',client.userId)" />
       </span>

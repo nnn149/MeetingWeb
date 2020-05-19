@@ -85,7 +85,8 @@ export default {
         nickname: '未连接',
         roomId: '0',
         localStream: undefined,
-        peerConnection: undefined
+        peerConnection: undefined,
+        isSelf: false
       }],
       roomFromDate: {
         roomId: '',
@@ -242,7 +243,8 @@ export default {
           nickname: message.message,
           localStream: this.clients[0].localStream,
           peerConnection: undefined,
-          muted: true
+          muted: false,
+          isSelf: true
         }
         this.$set(this.clients, Number(message.userId), remoteClient)
         console.log('本地窗口创建')
@@ -260,7 +262,8 @@ export default {
           nickname: message.message,
           localStream: undefined,
           peerConnection: rtcPeerConnection,
-          muted: false
+          muted: false,
+          isSelf: false
         }
         this.$set(this.clients, Number(message.userId), remoteClient)
         console.log('准备完毕,添加了一个连接')
@@ -287,13 +290,14 @@ export default {
 
       rtcPeerConnection.ontrack = this.onTrack
       rtcPeerConnection.onicecandidate = this.onIceCandidate
-      var remoteClient = {
+      const remoteClient = {
         userId: message.userId,
         roomId: message.roomId,
         nickname: message.roomPw,
         localStream: undefined,
         peerConnection: rtcPeerConnection,
-        muted: false
+        muted: false,
+        isSelf: false
       }
       this.$set(this.clients, Number(message.userId), remoteClient)
       console.log('接受到offer,添加了一个连接')
