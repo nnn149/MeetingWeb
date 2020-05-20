@@ -19,13 +19,16 @@
       </el-header>
       <el-container>
         <el-main>
-          <video ref="video_full" muted autoplay playsinline />
-          <el-button @click="startV()">开始</el-button>
-          <el-button @click="stopV()">停止</el-button>
+          <div style="text-align: center ;height: 100%;width: 100%">
+            <video ref="video_full" style="height: 100%" muted autoplay playsinline />
+          </div>
 
-          <el-button type="primary" style="margin-left: 16px;" @click="addV">
-            添加
-          </el-button>
+          <!--          <el-button @click="startV()">开始</el-button>-->
+          <!--          <el-button @click="stopV()">停止</el-button>-->
+
+          <!--          <el-button type="primary" style="margin-left: 16px;" @click="addV">-->
+          <!--            添加-->
+          <!--          </el-button>-->
 
         </el-main>
         <el-aside width="350px">
