@@ -19,7 +19,7 @@
       </el-header>
       <el-container>
         <el-main>
-          <video ref="video_full" autoplay playsinline />
+          <video ref="video_full" muted autoplay playsinline />
           <el-button @click="startV()">开始</el-button>
           <el-button @click="stopV()">停止</el-button>
 
@@ -108,6 +108,7 @@ export default {
       isBan: false,
       isView: true,
       isMuted: false,
+      fullScreenId: '',
       clients: [{
         userId: '0',
         nickname: '未连接',
@@ -265,8 +266,10 @@ export default {
       console.log('fullScreen:' + userId)
       if (userId === this.clients[0].userId) {
         this.$refs.video_full.srcObject = this.clients[0].localStream
+        this.fullScreenId = '0'
       } else {
         this.$refs.video_full.srcObject = this.clients[userId].localStream
+        this.fullScreenId = userId
       }
     },
     kick(userId) {
@@ -309,6 +312,9 @@ export default {
           } else {
             if (this.clients[Number(userId)].view) {
               this.clients[Number(userId)].view = false
+              if (this.fullScreenId !== '0') {
+                this.$refs.video_full.srcObject = null
+              }
             } else {
               this.clients[Number(userId)].view = true
             }
@@ -567,6 +573,9 @@ export default {
           })
         } else {
           // 全体关闭视频
+          if (this.fullScreenId !== '0') {
+            this.$refs.video_full.srcObject = null
+          }
           this.isView = false
           this.clients.forEach(c => {
             if (c !== undefined && !c.isRoomAdmin) {
@@ -580,12 +589,18 @@ export default {
             this.clients[0].view = true
           } else {
             this.clients[0].view = false
+            if (this.fullScreenId === '0') {
+              this.$refs.video_full.srcObject = null
+            }
           }
         } else {
           if (message.message === 'true') {
             this.clients[Number(message.userId)].view = true
           } else {
             this.clients[Number(message.userId)].view = false
+            if (this.fullScreenId === message.userId) {
+              this.$refs.video_full.srcObject = null
+            }
           }
         }
       }
