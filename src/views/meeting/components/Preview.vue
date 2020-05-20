@@ -10,7 +10,8 @@
     </div>
     <div class="console-container">
       <span style="max-width: 130px">
-        <i class="el-icon-s-custom" />
+        <i v-if="client.isRoomAdmin" class="el-icon-s-custom" />
+        <i v-if="!client.isRoomAdmin" class="el-icon-user" />
         <span>{{ client.nickname }}</span>
       </span>
       <span style="float: right">
