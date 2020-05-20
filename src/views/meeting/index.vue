@@ -158,6 +158,10 @@ export default {
     console.log('即将销毁')
   },
   destroyed() {
+    if (this.isInRoom) {
+      const msg = new MessageModel(TYPE_COMMAND_KICK, this.roomFromDate.roomId, '', this.clients[0].userId)
+      this.wsSend(msg)
+    }
     if (this.localWebsocket !== undefined) {
       this.localWebsocket.close() // 离开路由之后断开localWebsocket连接
     }
@@ -197,7 +201,6 @@ export default {
       this.localWebsocket.close()
     },
     addV() {
-      console.log(this.clients)
     },
     ban(userId) {
       console.log('ban:' + userId)
@@ -678,7 +681,13 @@ export default {
         }
       }
     }, kickHandle(message) {
-
+      if (message.userId === this.clients[0].userId) {
+        this.$message.error('您被踢出会议!')
+        this.$router.go(-1)
+      } else {
+        this.clients[Number(message.userId)].peerConnection.close()
+        this.clients.splice(Number(message.userId), 1)
+      }
     },
     wsSend(data) { // 数据发送
       this.localWebsocket.send(JSON.stringify(data))
