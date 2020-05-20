@@ -587,8 +587,10 @@ export default {
         if (message.userId === this.clients[0].userId) {
           if (message.message === 'true') {
             this.clients[0].view = true
+            this.clients[0].localStream.getVideoTracks()[0].enabled = true
           } else {
             this.clients[0].view = false
+            this.clients[0].localStream.getVideoTracks()[0].enabled = false
             if (this.fullScreenId === '0') {
               this.$refs.video_full.srcObject = null
             }
@@ -628,8 +630,10 @@ export default {
         if (message.userId === this.clients[0].userId) {
           if (message.message === 'true') {
             this.clients[0].muted = true
+            this.clients[0].localStream.getAudioTracks()[0].enabled = false
           } else {
             this.clients[0].muted = false
+            this.clients[0].localStream.getAudioTracks()[0].enabled = true
           }
         } else {
           if (message.message === 'true') {
