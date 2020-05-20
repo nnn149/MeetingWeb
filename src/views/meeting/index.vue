@@ -9,7 +9,7 @@
             :key="client.userId"
             :client="client"
             :is-room-admin="clients[0].isRoomAdmin"
-            @pmEvent="pm"
+            @banEvent="ban"
             @microEvent="changeMicro"
             @fullEvent="fullScreen"
             @kickEvent="kick"
@@ -31,9 +31,29 @@
         <el-aside width="350px">
           <Chat :receive-msg="receiveMsg" @chatEvent="sendChat" @noticeEvent="notice" />
           <div style="text-align: center;margin-top: 10px">
-            <el-button type="danger" round size="mini">全体禁言</el-button>
-            <el-button type="danger" round size="mini">全体禁音</el-button>
-            <el-button type="danger" round size="mini">全体禁视</el-button>
+            <el-button v-if="clients[0].isRoomAdmin" type="danger" round size="mini" @click="changeView('')">
+              <span v-show="isView">
+                全体禁视
+              </span>
+              <span v-show="!isView">
+                取消禁视
+              </span>
+            </el-button>
+            <el-button v-if="clients[0].isRoomAdmin" type="danger" round size="mini" @click="changeMicro('')">
+              <span v-show="!isMuted">
+                全体禁音
+              </span>
+              <span v-show="isMuted">
+                取消禁音
+              </span></el-button>
+            <el-button v-if="clients[0].isRoomAdmin" type="danger" round size="mini" @click="ban('')">
+              <span v-show="!isBan">
+                全体禁言
+              </span>
+              <span v-show="isBan">
+                取消禁言
+              </span></el-button>
+
           </div>
         </el-aside>
       </el-container>
@@ -85,6 +105,9 @@ export default {
       wsUrl: undefined,
       receiveMsg: '',
       isInRoom: false,
+      isBan: false,
+      isView: true,
+      isMuted: false,
       clients: [{
         userId: '0',
         nickname: '未连接',
@@ -175,38 +198,65 @@ export default {
     addV() {
       console.log(this.clients)
     },
-    pm(userId) {
-      console.log('pm:' + userId)
-      if (this.clients[userId].chat) { // 全员发送chat关闭
-        this.clients[userId].chat = false
-      } else { // 全员发送chat开启
-        this.clients[userId].chat = true
+    ban(userId) {
+      console.log('ban:' + userId)
+      if (userId === '') { // 全体禁言
+        if (this.isBan) { // 恢复
+          const msg = new MessageModel(TYPE_COMMAND_BAN, this.roomFromDate.roomId, 'false', '')
+          this.wsSend(msg)
+        } else {
+          // 全体禁言
+          const msg = new MessageModel(TYPE_COMMAND_BAN, this.roomFromDate.roomId, 'true', '')
+          this.wsSend(msg)
+        }
+      } else {
+        if (this.clients[userId].chat) { // 全员发送chat关闭
+          const msg = new MessageModel(TYPE_COMMAND_BAN, this.roomFromDate.roomId, 'true', userId)
+          this.wsSend(msg)
+        } else { // 全员发送chat开启
+          const msg = new MessageModel(TYPE_COMMAND_BAN, this.roomFromDate.roomId, 'false', userId)
+          this.wsSend(msg)
+        }
       }
     },
     changeMicro(userId) {
       console.log('changeMicro:' + userId)
-      if (userId === this.clients[0].userId) { // 自己开关麦克风，通知所有人
-        if (this.clients[0].muted) {
-          // 打开麦克风
-          this.clients[0].muted = false
+      if (userId === '') {
+        if (this.isMuted) {
+          const msg = new MessageModel(TYPE_COMMAND_MUTED, this.roomFromDate.roomId, 'false', '')
+          this.wsSend(msg)
         } else {
-          // 关闭麦克风
-          this.clients[0].muted = true
+          const msg = new MessageModel(TYPE_COMMAND_MUTED, this.roomFromDate.roomId, 'true', '')
+          this.wsSend(msg)
         }
-      } else { // 别人
-        if (this.clients[0].isRoomAdmin) { // 自己是管理员，就要彻底开关他的麦克风
-          if (this.clients[Number(userId)].muted) {
-            // 通知所有人打开此人麦克风
-            this.clients[Number(userId)].muted = false
+      } else {
+        if (userId === this.clients[0].userId) { // 自己开关麦克风，通知所有人
+          if (this.clients[0].muted) {
+            // 打开麦克风
+            const msg = new MessageModel(TYPE_COMMAND_MUTED, this.roomFromDate.roomId, 'false', this.clients[0].userId)
+            this.wsSend(msg)
           } else {
-            // 通知所有人关闭此人麦克风
-            this.clients[Number(userId)].muted = true
+            // 关闭麦克风
+            const msg = new MessageModel(TYPE_COMMAND_MUTED, this.roomFromDate.roomId, 'true', this.clients[0].userId)
+            this.wsSend(msg)
           }
-        } else {
-          if (this.clients[Number(userId)].muted) {
-            this.clients[Number(userId)].muted = false
+        } else { // 别人
+          if (this.clients[0].isRoomAdmin) { // 自己是管理员，就要彻底开关他的麦克风
+            if (this.clients[Number(userId)].muted) {
+              // 通知所有人打开此人麦克风
+              const msg = new MessageModel(TYPE_COMMAND_MUTED, this.roomFromDate.roomId, 'false', userId)
+              this.wsSend(msg)
+            } else {
+              // 通知所有人关闭此人麦克风
+              const msg = new MessageModel(TYPE_COMMAND_MUTED, this.roomFromDate.roomId, 'true', userId)
+              this.wsSend(msg)
+            }
           } else {
-            this.clients[Number(userId)].muted = true
+            if (this.clients[Number(userId)].muted) {
+              this.clients[Number(userId)].muted = false
+            } else {
+              this.clients[Number(userId)].muted = true
+            }
           }
         }
       }
@@ -221,31 +271,47 @@ export default {
     },
     kick(userId) {
       console.log('kick:' + userId)
+      const msg = new MessageModel(TYPE_COMMAND_KICK, this.roomFromDate.roomId, '', userId)
+      this.wsSend(msg)
     },
     changeView(userId) {
       console.log('changeView:' + userId)
-      if (userId === this.clients[0].userId) { // 自己开关视频，通知所有人
-        if (this.clients[0].view) {
-          // 打开视频
-          this.clients[0].view = false
+      if (userId === '') {
+        if (this.isView) {
+          const msg = new MessageModel(TYPE_COMMAND_VIEW, this.roomFromDate.roomId, 'false', '')
+          this.wsSend(msg)
         } else {
-          // 关闭视频
-          this.clients[0].view = true
+          const msg = new MessageModel(TYPE_COMMAND_VIEW, this.roomFromDate.roomId, 'true', '')
+          this.wsSend(msg)
         }
-      } else { // 别人
-        if (this.clients[0].isRoomAdmin) { // 自己是管理员，就要彻底开关他的视频
-          if (this.clients[Number(userId)].view) {
-            // 通知所有人打开此人视频
-            this.clients[Number(userId)].view = false
+      } else {
+        if (userId === this.clients[0].userId) { // 自己开关视频，通知所有人
+          if (this.clients[0].view) {
+            // 打开视频
+            const msg = new MessageModel(TYPE_COMMAND_VIEW, this.roomFromDate.roomId, 'false', this.clients[0].userId)
+            this.wsSend(msg)
           } else {
-            // 通知所有人关闭此人视频
-            this.clients[Number(userId)].view = true
+            // 关闭视频
+            const msg = new MessageModel(TYPE_COMMAND_VIEW, this.roomFromDate.roomId, 'true', this.clients[0].userId)
+            this.wsSend(msg)
           }
-        } else {
-          if (this.clients[Number(userId)].view) {
-            this.clients[Number(userId)].view = false
+        } else { // 别人
+          if (this.clients[0].isRoomAdmin) { // 自己是管理员，就要彻底开关他的视频
+            if (this.clients[Number(userId)].view) {
+              // 通知所有人打开此人视频
+              const msg = new MessageModel(TYPE_COMMAND_VIEW, this.roomFromDate.roomId, 'false', userId)
+              this.wsSend(msg)
+            } else {
+              // 通知所有人关闭此人视频
+              const msg = new MessageModel(TYPE_COMMAND_VIEW, this.roomFromDate.roomId, 'true', userId)
+              this.wsSend(msg)
+            }
           } else {
-            this.clients[Number(userId)].view = true
+            if (this.clients[Number(userId)].view) {
+              this.clients[Number(userId)].view = false
+            } else {
+              this.clients[Number(userId)].view = true
+            }
           }
         }
       }
@@ -255,6 +321,10 @@ export default {
     },
     sendChat(msg) {
       console.log('sendChat:' + msg)
+      if (!this.clients[0].chat) {
+        this.$message.error('已被禁言...')
+        return
+      }
       msg = new MessageModel(TYPE_COMMAND_CHAT, this.roomFromDate.roomId, this.name + ': ' + msg + '\n')
       this.wsSend(msg)
     },
@@ -303,14 +373,14 @@ export default {
         this.clients[0].isRoomAdmin = false
       }
       // 广播 自己准备好了,其他用户收到后就会创建连接
-      var msg = new MessageModel(TYPE_COMMAND_READY, this.roomFromDate.roomId, this.name, message.userId)
+      var msg = new MessageModel(TYPE_COMMAND_READY, this.roomFromDate.roomId, this.name, message.userId, '', this.clients[0].isRoomAdmin)
       console.log('发送准备完毕广播' + msg)
       this.wsSend(msg)
       this.$message.success('成功!')
     },
     readyHandle(message) { // 收到上线的用户准备好信号，创建RTCPeerConnectio准备与他连接并发送offer
       if (this.clients[0].userId === message.userId) { // 是自己准备好了
-        return
+
       } else {
         var rtcPeerConnection = new RTCPeerConnection(iceServers)
         rtcPeerConnection.userId = message.userId
@@ -329,7 +399,7 @@ export default {
           view: true,
           chat: true,
           isSelf: false,
-          isRoomAdmin: false
+          isRoomAdmin: JSON.parse(message.token)
         }
         this.$set(this.clients, Number(message.userId), remoteClient)
         console.log('准备完毕,添加了一个连接')
@@ -339,7 +409,7 @@ export default {
           console.log('创建offer,设置本地Description')
           console.log(description)
           rtcPeerConnection.setLocalDescription(description)
-          var msg = new MessageModel(TYPE_COMMAND_OFFER, this.clients[0].roomId, this.messageDateToString(description), message.userId, this.name) // 字段不够用,把名字临时放在roomPw字段
+          var msg = new MessageModel(TYPE_COMMAND_OFFER, this.clients[0].roomId, this.messageDateToString(description), message.userId, this.name, this.clients[0].isRoomAdmin) // 字段不够用,把名字临时放在roomPw字段
           console.log('发送offer')
           this.wsSend(msg)
         }).catch()
@@ -366,7 +436,7 @@ export default {
         view: true,
         chat: true,
         isSelf: false,
-        isRoomAdmin: false
+        isRoomAdmin: JSON.parse(message.token)
       }
       this.$set(this.clients, Number(message.userId), remoteClient)
       console.log('接受到offer,添加了一个连接')
@@ -412,7 +482,9 @@ export default {
       // console.log(this.clients)
       var newIceCandidata = new RTCIceCandidate(JSON.parse(message.message))
       this.clients[Number(message.userId)].peerConnection.addIceCandidate(newIceCandidata)
-        .then(console.log('添加Candidata成功')).catch((error) => { console.log('添加Candidata失败:' + error) })
+        .then(console.log('添加Candidata成功')).catch((error) => {
+          console.log('添加Candidata失败:' + error)
+        })
     },
     onTrack(event) {
       console.log('收到数据流' + event.target.userId)
@@ -469,7 +541,125 @@ export default {
         case TYPE_COMMAND_CANDIDATE:
           this.candidateHandle(message)
           break
+        case TYPE_COMMAND_VIEW:
+          this.viewHandle(message)
+          break
+        case TYPE_COMMAND_MUTED:
+          this.mutedHandle(message)
+          break
+        case TYPE_COMMAND_BAN:
+          this.banHandle(message)
+          break
+        case TYPE_COMMAND_KICK:
+          this.kickHandle(message)
+          break
       }
+    },
+    viewHandle(message) {
+      if (message.userId === '') {
+        if (message.message === 'true') {
+          // 全体开启视频
+          this.isView = true
+          this.clients.forEach(c => {
+            if (c !== undefined && !c.isRoomAdmin) {
+              c.view = true
+            }
+          })
+        } else {
+          // 全体关闭视频
+          this.isView = false
+          this.clients.forEach(c => {
+            if (c !== undefined && !c.isRoomAdmin) {
+              c.view = false
+            }
+          })
+        }
+      } else {
+        if (message.userId === this.clients[0].userId) {
+          if (message.message === 'true') {
+            this.clients[0].view = true
+          } else {
+            this.clients[0].view = false
+          }
+        } else {
+          if (message.message === 'true') {
+            this.clients[Number(message.userId)].view = true
+          } else {
+            this.clients[Number(message.userId)].view = false
+          }
+        }
+      }
+    },
+    mutedHandle(message) {
+      if (message.userId === '') {
+        if (message.message === 'true') {
+          // 全体静音
+          this.isMuted = true
+          this.clients.forEach(c => {
+            if (c !== undefined && !c.isRoomAdmin) {
+              c.muted = true
+            }
+          })
+        } else {
+          // 全体取消静音
+          this.isMuted = false
+          this.clients.forEach(c => {
+            if (c !== undefined && !c.isRoomAdmin) {
+              c.muted = false
+            }
+          })
+        }
+      } else {
+        if (message.userId === this.clients[0].userId) {
+          if (message.message === 'true') {
+            this.clients[0].muted = true
+          } else {
+            this.clients[0].muted = false
+          }
+        } else {
+          if (message.message === 'true') {
+            this.clients[Number(message.userId)].muted = true
+          } else {
+            this.clients[Number(message.userId)].muted = false
+          }
+        }
+      }
+    }, banHandle(message) {
+      if (message.userId === '') {
+        if (message.message === 'true') {
+          // 全体禁言
+          this.isBan = true
+          this.clients.forEach(c => {
+            if (c !== undefined && !c.isRoomAdmin) {
+              c.chat = false
+            }
+          })
+        } else {
+          // 全体取消禁言
+          this.isBan = false
+          this.clients.forEach(c => {
+            if (c !== undefined && !c.isRoomAdmin) {
+              c.chat = true
+            }
+          })
+        }
+      } else {
+        if (message.userId === this.clients[0].userId) {
+          if (message.message === 'true') {
+            this.clients[0].chat = false
+          } else {
+            this.clients[0].chat = true
+          }
+        } else {
+          if (message.message === 'true') {
+            this.clients[Number(message.userId)].chat = false
+          } else {
+            this.clients[Number(message.userId)].chat = true
+          }
+        }
+      }
+    }, kickHandle(message) {
+
     },
     wsSend(data) { // 数据发送
       this.localWebsocket.send(JSON.stringify(data))
@@ -495,8 +685,6 @@ class MessageModel {
 
 const TYPE_COMMAND_ROOM_ENTER = 'enterRoom'
 const TYPE_COMMAND_ROOM_CREATE = 'createRoom'
-const TYPE_COMMAND_ROOM_LIST = 'roomList'
-const TYPE_COMMAND_PM = 'pm'
 const TYPE_COMMAND_READY = 'ready'
 const TYPE_COMMAND_OFFER = 'offer'
 const TYPE_COMMAND_ANSWER = 'answer'
@@ -505,6 +693,11 @@ const TYPE_COMMAND_CANDIDATE = 'candidate'
 const TYPE_COMMAND_ERROR = 'error'
 const TYPE_COMMAND_SUCCESS = 'success'
 const TYPE_COMMAND_CHAT = 'chat'
+
+const TYPE_COMMAND_MUTED = 'MUTED'
+const TYPE_COMMAND_VIEW = 'VIEW'
+const TYPE_COMMAND_BAN = 'BAN'
+const TYPE_COMMAND_KICK = 'KICK'
 
 const iceServers = {
   'iceServers': [

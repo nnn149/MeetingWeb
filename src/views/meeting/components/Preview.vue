@@ -22,10 +22,10 @@
         <i v-show="client.muted" class="el-icon-turn-off-microphone" @click="$emit('microEvent',client.userId)" />
         <i v-show="!client.muted" class="el-icon-microphone" @click="$emit('microEvent',client.userId)" />
 
-        <i v-show="!client.isSelf && isRoomAdmin && client.chat" class="el-icon-chat-dot-round" @click="$emit('pmEvent',client.userId)" />
-        <i v-show="!client.isSelf && isRoomAdmin && !client.chat" class="el-icon-chat-round" @click="$emit('pmEvent',client.userId)" />
+        <i v-show="!client.isSelf && isRoomAdmin && client.chat" class="el-icon-chat-dot-round" @click="$emit('banEvent',client.userId)" />
+        <i v-show="!client.isSelf && isRoomAdmin && !client.chat" class="el-icon-chat-round" @click="$emit('banEvent',client.userId)" />
 
-        <i v-if="client.isRoomAdmin" style="color: #ff4250;horiz-align: right" class="el-icon-error" @click="$emit('kickEvent',client.userId)" />
+        <i v-if="!client.isSelf && isRoomAdmin" style="color: #ff4250;horiz-align: right" class="el-icon-error" @click="$emit('kickEvent',client.userId)" />
       </span>
     </div>
   </div>
