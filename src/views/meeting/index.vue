@@ -23,12 +23,12 @@
             <video ref="video_full" style="height: 100%" muted autoplay playsinline />
           </div>
 
-          <!--          <el-button @click="startV()">开始</el-button>-->
-          <!--          <el-button @click="stopV()">停止</el-button>-->
+          <el-button @click="startV()">开始</el-button>
+          <el-button @click="stopV()">停止</el-button>
 
-          <!--          <el-button type="primary" style="margin-left: 16px;" @click="addV">-->
-          <!--            添加-->
-          <!--          </el-button>-->
+          <el-button type="primary" style="margin-left: 16px;" @click="addV">
+            添加
+          </el-button>
 
         </el-main>
         <el-aside width="350px">
@@ -172,30 +172,28 @@ export default {
 
   methods: {
     // 设置本地播放器
-    startV() {
+    async startV() {
       console.log(adapter.browserDetails.browser)
-      navigator.mediaDevices.getUserMedia(constraints)
-        .then((mediaStream) => {
-          console.log('本地播放器设置')
-          const c0 = {
-            userId: '0',
-            roomId: '0',
-            nickname: '未连接',
-            localStream: mediaStream,
-            peerConnection: undefined,
-            muted: false,
-            view: true,
-            chat: true,
-            isSelf: true,
-            isRoomAdmin: false
-          }
-          this.$set(this.clients, 0, c0)
-          console.log('本地流')
-          console.log(this.clients[0].localStream)
-          console.log('本地播放器设置成功')
-        }).catch((e) => {
-          console.log('本地播放器设置失败 ' + e.message)
-        })
+      var mediaStream = await navigator.mediaDevices.getDisplayMedia(constraints)
+      var audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      console.log('本地播放器设置')
+      const c0 = {
+        userId: '0',
+        roomId: '0',
+        nickname: '未连接',
+        localStream: mediaStream,
+        peerConnection: undefined,
+        muted: false,
+        view: true,
+        chat: true,
+        isSelf: true,
+        isRoomAdmin: false
+      }
+      c0.localStream.addTrack(audioStream.getAudioTracks()[0])
+      this.$set(this.clients, 0, c0)
+      console.log('本地流')
+      console.log(this.clients[0].localStream)
+      console.log('本地播放器设置成功')
     },
     stopV() {
       this.localStream.getTracks().forEach(function(track) {
@@ -204,6 +202,11 @@ export default {
       this.localWebsocket.close()
     },
     addV() {
+      navigator.mediaDevices.getDisplayMedia({ constraints }).then(stream => {
+        this.clients[0].localStream = stream
+      }).catch(error => {
+        console.log(error)
+      })
     },
     ban(userId) {
       console.log('ban:' + userId)
