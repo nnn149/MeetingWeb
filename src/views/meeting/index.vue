@@ -96,6 +96,7 @@ export default {
       }
     }
     return {
+      meetingId: '0',
       dialogFormVisible: false,
       localWebsocket: undefined,
       wsUrl: undefined,
@@ -752,6 +753,8 @@ const TYPE_COMMAND_MUTED = 'MUTED'
 const TYPE_COMMAND_VIEW = 'VIEW'
 const TYPE_COMMAND_BAN = 'BAN'
 const TYPE_COMMAND_KICK = 'KICK'
+
+const TYPE_COMMAND_SIGN = 'SIGN'
 
 const iceServers = {
   'iceServers': [
