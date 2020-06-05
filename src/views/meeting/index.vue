@@ -14,6 +14,7 @@
             @fullEvent="fullScreen"
             @kickEvent="kick"
             @viewEvent="changeView"
+            @changeStreamEvent="changeStream"
           />
         </template>
       </el-header>
@@ -22,14 +23,6 @@
           <div style="text-align: center ;height: calc(100vh - 300px);width: 100%">
             <video ref="video_full" style="height:100%" muted autoplay playsinline />
           </div>
-
-          <!--          <el-button @click="startV()">开始</el-button>-->
-          <!--          <el-button @click="stopV()">停止</el-button>-->
-
-          <!--          <el-button type="primary" style="margin-left: 16px;" @click="addV">-->
-          <!--            添加-->
-          <!--          </el-button>-->
-
         </el-main>
         <el-aside width="350px">
           <Chat :receive-msg="receiveMsg" @chatEvent="sendChat" @noticeEvent="notice" />
@@ -122,7 +115,8 @@ export default {
         view: true,
         chat: true,
         isSelf: false,
-        isRoomAdmin: false
+        isRoomAdmin: false,
+        nowStream: 'screen'
       }],
       roomFromDate: {
         roomId: '',
@@ -168,6 +162,7 @@ export default {
     if (this.localWebsocket !== undefined) {
       this.localWebsocket.close() // 离开路由之后断开localWebsocket连接
     }
+    this.stopV()
   },
 
   methods: {
@@ -187,7 +182,8 @@ export default {
         view: true,
         chat: true,
         isSelf: true,
-        isRoomAdmin: false
+        isRoomAdmin: false,
+        nowStream: 'screen'
       }
       c0.localStream.addTrack(audioStream.getAudioTracks()[0])
       this.$set(this.clients, 0, c0)
@@ -196,10 +192,9 @@ export default {
       console.log('本地播放器设置成功')
     },
     stopV() {
-      this.localStream.getTracks().forEach(function(track) {
+      this.clients[0].localStream.getTracks().forEach(function(track) {
         track.stop()
       })
-      this.localWebsocket.close()
     },
     addV() {
       navigator.mediaDevices.getDisplayMedia({ constraints }).then(stream => {
@@ -207,6 +202,29 @@ export default {
       }).catch(error => {
         console.log(error)
       })
+    },
+    async changeStream(userId) {
+      if (this.clients[0].nowStream === 'screen') {
+        this.stopV()
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then((mediaStream) => {
+            console.log('切换为摄像头')
+            this.clients[0].localStream = mediaStream
+            console.log('本地播放器设置成功')
+          }).catch((e) => {
+            console.log('本地播放器设置失败 ' + e.message)
+          })
+        this.clients[0].nowStream = 'camera'
+      } else {
+        this.stopV()
+        var mediaStream = await navigator.mediaDevices.getDisplayMedia(constraints)
+        var audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        console.log('切换为屏幕')
+        this.clients[0].localStream = mediaStream
+        this.clients[0].localStream.addTrack(audioStream.getAudioTracks()[0])
+        console.log('本地播放器设置成功')
+        this.clients[0].nowStream = 'screen'
+      }
     },
     ban(userId) {
       console.log('ban:' + userId)
@@ -414,7 +432,8 @@ export default {
           view: true,
           chat: true,
           isSelf: false,
-          isRoomAdmin: JSON.parse(message.token)
+          isRoomAdmin: JSON.parse(message.token),
+          nowStream: 'screen'
         }
         this.$set(this.clients, Number(message.userId), remoteClient)
         console.log('准备完毕,添加了一个连接')
@@ -451,7 +470,8 @@ export default {
         view: true,
         chat: true,
         isSelf: false,
-        isRoomAdmin: JSON.parse(message.token)
+        isRoomAdmin: JSON.parse(message.token),
+        nowStream: 'screen'
       }
       this.$set(this.clients, Number(message.userId), remoteClient)
       console.log('接受到offer,添加了一个连接')

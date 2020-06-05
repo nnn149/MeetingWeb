@@ -13,6 +13,7 @@
         <i v-if="client.isRoomAdmin" class="el-icon-s-custom" />
         <i v-if="!client.isRoomAdmin" class="el-icon-user" />
         <span>{{ client.nickname }}</span>
+        <i v-if="client.isSelf" class="el-icon-refresh" @click="$emit('changeStreamEvent',client.userId)" />
       </span>
       <span style="float: right">
         <i v-show="client.view" class="el-icon-full-screen" @click="$emit('fullEvent',client.userId)" />
