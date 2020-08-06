@@ -1,219 +1,69 @@
-<p align="center">
-  <img width="320" src="https://wpimg.wallstcn.com/ecc53a42-d79b-42e2-8852-5126b810a4c8.svg">
-</p>
+# MeetingWeb
+视频会议的前端
 
-<p align="center">
-  <a href="https://github.com/vuejs/vue">
-    <img src="https://img.shields.io/badge/vue-2.6.10-brightgreen.svg" alt="vue">
-  </a>
-  <a href="https://github.com/ElemeFE/element">
-    <img src="https://img.shields.io/badge/element--ui-2.7.0-brightgreen.svg" alt="element-ui">
-  </a>
-  <a href="https://travis-ci.org/PanJiaChen/vue-element-admin" rel="nofollow">
-    <img src="https://travis-ci.org/PanJiaChen/vue-element-admin.svg?branch=master" alt="Build Status">
-  </a>
-  <a href="https://github.com/PanJiaChen/vue-element-admin/blob/master/LICENSE">
-    <img src="https://img.shields.io/github/license/mashape/apistatus.svg" alt="license">
-  </a>
-  <a href="https://github.com/PanJiaChen/vue-element-admin/releases">
-    <img src="https://img.shields.io/github/release/PanJiaChen/vue-element-admin.svg" alt="GitHub release">
-  </a>
-  <a href="https://gitter.im/vue-element-admin/discuss">
-    <img src="https://badges.gitter.im/Join%20Chat.svg" alt="gitter">
-  </a>
-  <a href="https://panjiachen.github.io/vue-element-admin-site/donate">
-    <img src="https://img.shields.io/badge/%24-donate-ff69b4.svg" alt="donate">
-  </a>
-</p>
+使用webrtc实现图像传输。
 
-English | [简体中文](./README.zh-CN.md) | [日本語](./README.ja.md) | [Spanish](./README.es.md)
+vue+elementui
 
-## Introduction
 
-[vue-element-admin](https://panjiachen.github.io/vue-element-admin) is a production-ready front-end solution for admin interfaces. It is based on [vue](https://github.com/vuejs/vue) and uses the UI Toolkit [element-ui](https://github.com/ElemeFE/element).
 
-[vue-element-admin](https://panjiachen.github.io/vue-element-admin) is based on the newest development stack of vue and it has a built-in i18n solution, typical templates for enterprise applications, and lots of awesome features. It helps you build large and complex Single-Page Applications. I believe whatever your needs are, this project will help you.
+## 功能
+视频通话
 
-- [Preview](https://panjiachen.github.io/vue-element-admin)
+语音通话
 
-- [Documentation](https://panjiachen.github.io/vue-element-admin-site/)
+共享桌面
 
-- [Gitter](https://gitter.im/vue-element-admin/discuss)
+大屏预览
 
-- [Donate](https://panjiachen.github.io/vue-element-admin-site/donate/)
+聊天室
 
-- [Wiki](https://github.com/PanJiaChen/vue-element-admin/wiki)
+管理员控制成员视频麦克风等
 
-- [Gitee](https://panjiachen.gitee.io/vue-element-admin/) 国内用户可访问该地址在线预览
+不限制人数(人多可能会卡)
 
-- Base template recommends using: [vue-admin-template](https://github.com/PanJiaChen/vue-admin-template)
-- Desktop: [electron-vue-admin](https://github.com/PanJiaChen/electron-vue-admin)
-- Typescript: [vue-typescript-admin-template](https://github.com/Armour/vue-typescript-admin-template) (Credits: [@Armour](https://github.com/Armour))
-- [awesome-project](https://github.com/PanJiaChen/vue-element-admin/issues/2312)
 
-**After the `v4.1.0+` version, the default master branch will not support i18n. Please use [i18n Branch](https://github.com/PanJiaChen/vue-element-admin/tree/i18n), it will keep up with the master update**
 
-**The current version is `v4.0+` build on `vue-cli`. If you find a problem, please put [issue](https://github.com/PanJiaChen/vue-element-admin/issues/new). If you want to use the old version , you can switch branch to [tag/3.11.0](https://github.com/PanJiaChen/vue-element-admin/tree/tag/3.11.0), it does not rely on `vue-cli`**
+## 预览图
 
-**This project does not support low version browsers (e.g. IE). Please add polyfill by yourself.**
+![](image/1.png)
 
-## Preparation
+![2](image/2.bmp)
 
-You need to install [node](https://nodejs.org/) and [git](https://git-scm.com/) locally. The project is based on [ES2015+](https://es6.ruanyifeng.com/), [vue](https://cn.vuejs.org/index.html), [vuex](https://vuex.vuejs.org/zh-cn/), [vue-router](https://router.vuejs.org/zh-cn/), [vue-cli](https://github.com/vuejs/vue-cli) , [axios](https://github.com/axios/axios) and [element-ui](https://github.com/ElemeFE/element), all request data is simulated using [Mock.js](https://github.com/nuysoft/Mock).
-Understanding and learning this knowledge in advance will greatly help the use of this project.
+![3](image/3.png)
 
-[![Edit on CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/github/PanJiaChen/vue-element-admin/tree/CodeSandbox)
+![4](image/4.png)
 
- <p align="center">
-  <img width="900" src="https://wpimg.wallstcn.com/a5894c1b-f6af-456e-82df-1151da0839bf.png">
-</p>
+## 主要代码
 
-## Sponsors
+`MeetingWeb\src\views\meeting`里是视频会议功能的模块代码
 
-Become a sponsor and get your logo on our README on GitHub with a link to your site. [[Become a sponsor]](https://www.patreon.com/panjiachen)
+`index.vue` webrtc、websocket和界面布局的主要实现
 
-<a href="https://flatlogic.com/admin-dashboards?from=vue-element-admin"><img width="150px" src="https://wpimg.wallstcn.com/9c0b719b-5551-4c1e-b776-63994632d94a.png" /></a><p>Admin Dashboard Templates made with Vue, React and Angular.</p>
+​    `clients`变量内存储所有人的信息，`clients[0]`固定为自己。`clients[userId]`根据userId存放所有参加会议的人的信息和webrtc链接
 
-## Features
+`components`内的`Chat.vue`封装了聊天室控件
 
-```
-- Login / Logout
+`components`内的`Preview.vue`封装了顶部所有人的视频小窗看控件
 
-- Permission Authentication
-  - Page permission
-  - Directive permission
-  - Permission configuration page
-  - Two-step login
 
-- Multi-environment build
-  - dev sit stage prod
 
-- Global Features
-  - I18n
-  - Multiple dynamic themes
-  - Dynamic sidebar (supports multi-level routing)
-  - Dynamic breadcrumb
-  - Tags-view (Tab page Support right-click operation)
-  - Svg Sprite
-  - Mock data
-  - Screenfull
-  - Responsive Sidebar
+## 运行: 
 
-- Editor
-  - Rich Text Editor
-  - Markdown Editor
-  - JSON Editor
+先部署后端
 
-- Excel
-  - Export Excel
-  - Upload Excel
-  - Visualization Excel
-  - Export zip
+https://github.com/nnn149/MeetingServer
 
-- Table
-  - Dynamic Table
-  - Drag And Drop Table
-  - Inline Edit Table
+删除https方法，这次commit提交对应的代码的全部删掉。
 
-- Error Page
-  - 401
-  - 404
+https://github.com/nnn149/MeetingWeb/commit/ef43a9af7d9e8a5855f7c7abb2bd04a3e080a878
 
-- Components
-  - Avatar Upload
-  - Back To Top
-  - Drag Dialog
-  - Drag Select
-  - Drag Kanban
-  - Drag List
-  - SplitPane
-  - Dropzone
-  - Sticky
-  - CountTo
+然后参照
 
-- Advanced Example
-- Error Log
-- Dashboard
-- Guide Page
-- ECharts
-- Clipboard
-- Markdown to html
-```
+https://github.com/PanJiaChen/vue-element-admin
 
-## Getting started
+运行
 
-```bash
-# clone the project
-git clone https://github.com/PanJiaChen/vue-element-admin.git
 
-# enter the project directory
-cd vue-element-admin
 
-# install dependency
-npm install
 
-# develop
-npm run dev
-```
-
-This will automatically open http://localhost:9527
-
-## Build
-
-```bash
-# build for test environment
-npm run build:stage
-
-# build for production environment
-npm run build:prod
-```
-
-## Advanced
-
-```bash
-# preview the release environment effect
-npm run preview
-
-# preview the release environment effect + static resource analysis
-npm run preview -- --report
-
-# code format check
-npm run lint
-
-# code format check and auto fix
-npm run lint -- --fix
-```
-
-Refer to [Documentation](https://panjiachen.github.io/vue-element-admin-site/guide/essentials/deploy.html) for more information
-
-## Changelog
-
-Detailed changes for each release are documented in the [release notes](https://github.com/PanJiaChen/vue-element-admin/releases).
-
-## Online Demo
-
-[Preview](https://panjiachen.github.io/vue-element-admin)
-
-## Donate
-
-If you find this project useful, you can buy author a glass of juice :tropical_drink:
-
-![donate](https://wpimg.wallstcn.com/bd273f0d-83a0-4ef2-92e1-9ac8ed3746b9.png)
-
-[Paypal Me](https://www.paypal.me/panfree23)
-
-[Buy me a coffee](https://www.buymeacoffee.com/Pan)
-
-## Browsers support
-
-Modern browsers and Internet Explorer 10+.
-
-| [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/edge/edge_48x48.png" alt="IE / Edge" width="24px" height="24px" />](https://godban.github.io/browsers-support-badges/)</br>IE / Edge | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png" alt="Firefox" width="24px" height="24px" />](https://godban.github.io/browsers-support-badges/)</br>Firefox | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" alt="Chrome" width="24px" height="24px" />](https://godban.github.io/browsers-support-badges/)</br>Chrome | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/safari/safari_48x48.png" alt="Safari" width="24px" height="24px" />](https://godban.github.io/browsers-support-badges/)</br>Safari |
-| --------- | --------- | --------- | --------- |
-| IE10, IE11, Edge| last 2 versions| last 2 versions| last 2 versions
-
-## License
-
-[MIT](https://github.com/PanJiaChen/vue-element-admin/blob/master/LICENSE)
-
-Copyright (c) 2017-present PanJiaChen

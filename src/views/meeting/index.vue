@@ -206,9 +206,9 @@ export default {
     },
     async changeStream(userId) {
       if (this.clients[0].nowStream === 'screen') {
-        this.stopV()
-        navigator.mediaDevices.getUserMedia({ video: true })
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
           .then((mediaStream) => {
+            this.stopV()
             console.log('切换为摄像头')
             this.clients[0].localStream = mediaStream
             console.log('本地播放器设置成功')
