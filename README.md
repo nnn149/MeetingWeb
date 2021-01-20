@@ -54,16 +54,18 @@ vue+elementui
 
 https://github.com/nnn149/MeetingServer
 
-删除https方法，这次commit提交对应的代码的全部删掉。
-
-https://github.com/nnn149/MeetingWeb/commit/ef43a9af7d9e8a5855f7c7abb2bd04a3e080a878
+然后全局替换ip，
+具体看这次提交
+https://github.com/nnn149/MeetingWeb/commit/77a8e09309eb49d252b328b854476dcd6c95dbb7
 
 然后参照
 
 https://github.com/PanJiaChen/vue-element-admin
-
+(npm run dev)
 运行
 
+删除https方法，这次commit提交对应的代码的全部删掉。
 
+https://github.com/nnn149/MeetingWeb/commit/ef43a9af7d9e8a5855f7c7abb2bd04a3e080a878
 
 

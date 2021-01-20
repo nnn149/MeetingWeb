@@ -43,7 +43,7 @@ module.exports = {
     },
     disableHostCheck: true,
     /* ---------添加https配置---------*/
-    host: '192.168.2.203',
+    host: '192.168.2.108',
     https: {
       key: fs.readFileSync(path.join(__dirname, './build/cert/privatekey.pem')),
       cert: fs.readFileSync(path.join(__dirname, './build/cert/certificate.pem'))
