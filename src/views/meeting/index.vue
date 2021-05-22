@@ -66,6 +66,10 @@
         <el-form-item label="密码:" prop="roomPw">
           <el-input v-model="roomFromDate.roomPw" type="password" maxlength="10" autocomplete="off" />
         </el-form-item>
+        <el-form-item label="视频来源:" prop="roomPw">
+          <el-radio v-model="roomFromDate.radio" label="1">摄像头</el-radio>
+          <el-radio v-model="roomFromDate.radio" label="2">电脑屏幕</el-radio>
+        </el-form-item>
         <el-form-item>
           <el-button @click="dialogFormVisible = false">取 消</el-button>
           <el-button type="primary" @click="createOrEnterRoom('enter')">加 入</el-button>
@@ -125,7 +129,8 @@ export default {
       roomFromDate: {
         nickname: '',
         roomId: '',
-        roomPw: ''
+        roomPw: '',
+        radio: '2'
       },
       roomFromRules: {
         roomId: [
@@ -171,28 +176,51 @@ export default {
   methods: {
     // 设置本地播放器
     async startV() {
-      console.log(adapter.browserDetails.browser)
-      var mediaStream = await navigator.mediaDevices.getDisplayMedia(constraints)
-      var audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-      console.log('本地播放器设置')
-      const c0 = {
-        userId: '0',
-        roomId: '0',
-        nickname: '未连接',
-        localStream: mediaStream,
-        peerConnection: undefined,
-        muted: false,
-        view: true,
-        chat: true,
-        isSelf: true,
-        isRoomAdmin: false,
-        nowStream: 'screen'
+      if (this.roomFromDate.radio === '2') {
+        console.log(adapter.browserDetails.browser)
+        var mediaStream = await navigator.mediaDevices.getDisplayMedia(constraints)
+        var audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        console.log('本地播放器设置')
+        const c0 = {
+          userId: '0',
+          roomId: '0',
+          nickname: '未连接',
+          localStream: mediaStream,
+          peerConnection: undefined,
+          muted: false,
+          view: true,
+          chat: true,
+          isSelf: true,
+          isRoomAdmin: false,
+          nowStream: 'screen'
+        }
+        c0.localStream.addTrack(audioStream.getAudioTracks()[0])
+        this.$set(this.clients, 0, c0)
+        console.log('本地流')
+        console.log(this.clients[0].localStream)
+        console.log('本地播放器设置成功')
+      } else {
+        console.log(adapter.browserDetails.browser)
+        var audioStream1 = await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+        console.log('摄像头设置')
+        const c01 = {
+          userId: '0',
+          roomId: '0',
+          nickname: '未连接',
+          localStream: audioStream1,
+          peerConnection: undefined,
+          muted: false,
+          view: true,
+          chat: true,
+          isSelf: true,
+          isRoomAdmin: false,
+          nowStream: 'screen'
+        }
+        this.$set(this.clients, 0, c01)
+        console.log('本地流')
+        console.log(this.clients[0].localStream)
+        console.log('本地摄像头设置成功')
       }
-      c0.localStream.addTrack(audioStream.getAudioTracks()[0])
-      this.$set(this.clients, 0, c0)
-      console.log('本地流')
-      console.log(this.clients[0].localStream)
-      console.log('本地播放器设置成功')
     },
     stopV() {
       this.clients[0].localStream.getTracks().forEach(function(track) {
@@ -213,9 +241,9 @@ export default {
             this.stopV()
             console.log('切换为摄像头')
             this.clients[0].localStream = mediaStream
-            console.log('本地播放器设置成功')
+            console.log('本地摄像头设置成功')
           }).catch((e) => {
-            console.log('本地播放器设置失败 ' + e.message)
+            console.log('本地摄像头设置失败 ' + e.message)
           })
         this.clients[0].nowStream = 'camera'
       } else {
