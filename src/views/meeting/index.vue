@@ -141,9 +141,6 @@ export default {
   },
   async mounted() {
     this.dialogFormVisible = true
-    this.startV()
-    var m = new MessageModel(TYPE_COMMAND_ROOM_CREATE)
-    console.log(JSON.stringify(m))
     try {
       await this.initLocalWebsocket()
     } catch (e) {
@@ -394,23 +391,25 @@ export default {
       })
     },
     successHandle(message) {
-      this.isInRoom = true
-      this.dialogFormVisible = false
-      this.clients[0].userId = message.userId
-      this.clients[0].roomId = message.roomId
-      this.clients[0].nickname = this.name
-      if (message.message === 'create') {
-        console.log('创建房间成功')
-        this.clients[0].isRoomAdmin = true
-      } else {
-        console.log('进入房间成功')
-        this.clients[0].isRoomAdmin = false
-      }
-      // 广播 自己准备好了,其他用户收到后就会创建连接
-      var msg = new MessageModel(TYPE_COMMAND_READY, this.roomFromDate.roomId, this.name, message.userId, '', this.clients[0].isRoomAdmin)
-      console.log('发送准备完毕广播' + msg)
-      this.wsSend(msg)
-      this.$message.success('成功!')
+      this.startV().then(() => {
+        this.isInRoom = true
+        this.dialogFormVisible = false
+        this.clients[0].userId = message.userId
+        this.clients[0].roomId = message.roomId
+        this.clients[0].nickname = this.name
+        if (message.message === 'create') {
+          console.log('创建房间成功')
+          this.clients[0].isRoomAdmin = true
+        } else {
+          console.log('进入房间成功')
+          this.clients[0].isRoomAdmin = false
+        }
+        // 广播 自己准备好了,其他用户收到后就会创建连接
+        var msg = new MessageModel(TYPE_COMMAND_READY, this.roomFromDate.roomId, this.name, message.userId, '', this.clients[0].isRoomAdmin)
+        console.log('发送准备完毕广播' + msg)
+        this.wsSend(msg)
+        this.$message.success('成功!')
+      })
     },
     readyHandle(message) { // 收到上线的用户准备好信号，创建RTCPeerConnectio准备与他连接并发送offer
       if (this.clients[0].userId === message.userId) { // 是自己准备好了
@@ -754,7 +753,7 @@ const TYPE_COMMAND_VIEW = 'VIEW'
 const TYPE_COMMAND_BAN = 'BAN'
 const TYPE_COMMAND_KICK = 'KICK'
 
-const TYPE_COMMAND_SIGN = 'SIGN'
+// const TYPE_COMMAND_SIGN = 'SIGN'
 
 const iceServers = {
   'iceServers': [
@@ -774,32 +773,32 @@ const constraints = {
 </script>
 
 <style lang="scss">
-  .el-header {
-    background-color: #B3C0D1;
-    padding: 0;
-    margin: 0;
-    overflow-x: scroll;
-    overflow-y: hidden;
-    white-space: nowrap;
-  }
+.el-header {
+  background-color: #B3C0D1;
+  padding: 0;
+  margin: 0;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
 
-  .el-aside {
-    background-color: #D3DCE6;
-    margin: 0;
-    padding-top: 8px;
-    padding-left: 10px;
-    padding-right: 10px;
-    padding-bottom: 20px;
-  }
+.el-aside {
+  background-color: #D3DCE6;
+  margin: 0;
+  padding-top: 8px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 20px;
+}
 
-  .el-main {
-    background-color: #E9EEF3;
+.el-main {
+  background-color: #E9EEF3;
 
-    padding: 0;
-  }
+  padding: 0;
+}
 
-  .el-container {
-    height: calc(100vh - 84px)
-  }
+.el-container {
+  height: calc(100vh - 84px)
+}
 
 </style>
