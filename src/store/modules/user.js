@@ -43,7 +43,9 @@ const actions = {
       })
     })
   },
-
+  setNickname({ commit }, nickname) {
+    commit('SET_NAME', nickname)
+  },
   // get user info
   getInfo({ commit, state }) {
     return new Promise((resolve, reject) => {

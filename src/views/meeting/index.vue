@@ -57,6 +57,9 @@
 
     <el-dialog title="请输入房间号和密码：" :visible.sync="dialogFormVisible" @close="closeView">
       <el-form ref="romeForm" :model="roomFromDate" status-icon :rules="roomFromRules" label-width="100px">
+        <el-form-item label="昵称:" prop="nickname">
+          <el-input v-model="roomFromDate.nickname" maxlength="20" autocomplete="off" />
+        </el-form-item>
         <el-form-item label="房间号:" prop="roomId">
           <el-input v-model="roomFromDate.roomId" maxlength="10" autocomplete="off" />
         </el-form-item>
@@ -79,7 +82,7 @@ import Chat from './components/Chat'
 import adapter from 'webrtc-adapter'
 import { getUrl } from '@/api/websocketInfo'
 import { mapGetters } from 'vuex'
-
+import store from '@/store'
 export default {
   name: 'Meeting',
   components: { Preview, Chat },
@@ -120,6 +123,7 @@ export default {
         nowStream: 'screen'
       }],
       roomFromDate: {
+        nickname: '',
         roomId: '',
         roomPw: ''
       },
@@ -141,6 +145,7 @@ export default {
   },
   async mounted() {
     this.dialogFormVisible = true
+    this.roomFromDate.nickname = this.name
     try {
       await this.initLocalWebsocket()
     } catch (e) {
@@ -376,12 +381,12 @@ export default {
         if (valid) {
           var msg
           if (method === 'create') {
-            msg = new MessageModel(TYPE_COMMAND_ROOM_CREATE, this.roomFromDate.roomId, '', '', this.roomFromDate.roomPw, this.token)
+            msg = new MessageModel(TYPE_COMMAND_ROOM_CREATE, this.roomFromDate.roomId, this.roomFromDate.nickname, '', this.roomFromDate.roomPw, this.token)
             console.log('创建房间:' + JSON.stringify(msg))
             this.wsSend(msg)
           } else {
             console.log('加入房间:' + this.roomFromDate.roomId)
-            msg = new MessageModel(TYPE_COMMAND_ROOM_ENTER, this.roomFromDate.roomId, '', '', this.roomFromDate.roomPw, this.token)
+            msg = new MessageModel(TYPE_COMMAND_ROOM_ENTER, this.roomFromDate.roomId, this.roomFromDate.nickname, '', this.roomFromDate.roomPw, this.token)
             this.wsSend(msg)
           }
         } else {
@@ -391,6 +396,7 @@ export default {
       })
     },
     successHandle(message) {
+      store.dispatch('user/setNickname', this.roomFromDate.nickname)
       this.startV().then(() => {
         this.isInRoom = true
         this.dialogFormVisible = false
